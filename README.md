@@ -1,5 +1,152 @@
 # Powerbi-Reporting
 
+### **Expanded Guide: Connecting Azure SQL for Transaction Data (SQL → ADF → Azure Storage → Power BI)**  
+
+This section provides a detailed step-by-step guide for **ingesting, transforming, and visualizing transaction data from Azure SQL into Power BI** using **Azure Data Factory (ADF) and Azure Storage**. This architecture ensures **scalability, data transformation efficiency, and optimal Power BI performance**.
+
+---
+
+## **1️⃣ Architecture Overview**  
+
+```mermaid
+graph TD
+    A[Azure SQL Database] -->|Extract| B[Azure Data Factory (ADF)]
+    B -->|Transform & Load| C[Azure Storage (Blob/Data Lake)]
+    C -->|Power BI Dataflow| D[Power BI Service]
+    D -->|Scheduled Refresh| E[Power BI Dashboard]
+```
+
+### **Key Components in the Architecture**
+- **Azure SQL Database**: Stores **transactional data** (e.g., claims, service requests, provider activity).  
+- **Azure Data Factory (ADF)**: Extracts, transforms, and loads (ETL) data from **Azure SQL into Azure Storage**.  
+- **Azure Storage (Blob or Data Lake Storage Gen2)**: Acts as an intermediary **staging layer** for Power BI to efficiently query data.  
+- **Power BI Service**: Connects to **Azure Storage** and visualizes the **transaction data**.  
+
+---
+
+## **2️⃣ Step-by-Step Implementation**
+### **Step 1: Configure Azure SQL Database for Transaction Data**
+✅ **Create an Azure SQL Database**  
+   - Navigate to **Azure Portal → Azure SQL Database**.  
+   - Click **"Create Database"**, select **Resource Group**, and configure performance tier.  
+   - Define tables for transactional data:  
+     ```sql
+     CREATE TABLE Transactions (
+         TransactionID INT PRIMARY KEY,
+         ServiceName NVARCHAR(100),
+         ResponseTime INT,
+         ErrorRate DECIMAL(5,2),
+         CreatedAt DATETIME
+     );
+     ```
+
+✅ **Enable Firewall & Networking for ADF Access**  
+   - Navigate to **SQL Server → Firewall Rules**.  
+   - Add **ADF’s IP address range** to allow secure access.  
+
+✅ **Create a Read-Optimized View for ETL**  
+   - To improve extraction performance, create a **materialized view**:  
+     ```sql
+     CREATE VIEW vw_TransactionSummary AS
+     SELECT 
+         TransactionID, ServiceName, ResponseTime, 
+         ErrorRate, CreatedAt
+     FROM Transactions
+     WHERE CreatedAt >= DATEADD(DAY, -30, GETDATE());
+     ```
+
+---
+
+### **Step 2: Configure Azure Data Factory (ADF)**
+✅ **Create an ADF Pipeline to Extract Data from SQL**  
+   - Navigate to **Azure Portal → Azure Data Factory → Create Pipeline**.  
+   - **Add a "Copy Data" Activity**.  
+   - **Source**: Connect to **Azure SQL Database**, select **"vw_TransactionSummary"**.  
+   - **Destination**: Set as **Azure Blob Storage (Parquet/CSV format)**.  
+
+✅ **Schedule the ADF Pipeline**  
+   - In ADF, navigate to **Triggers → New/Edit Schedule**.  
+   - Define **incremental refresh** frequency (e.g., **every 30 minutes or hourly**).  
+
+✅ **Optimize Data Transfer with Partitioning**  
+   - Use **Incremental Data Load** with **CreatedAt column**:  
+     ```sql
+     SELECT * FROM vw_TransactionSummary WHERE CreatedAt > ?
+     ```
+
+---
+
+### **Step 3: Store Data in Azure Storage (Blob or Data Lake)**
+✅ **Choose Storage Type**  
+   - **Azure Blob Storage**: Stores **CSV/Parquet files** for cost-effective storage.  
+   - **Azure Data Lake Storage Gen2**: Provides **hierarchical namespace and fine-grained security**.  
+
+✅ **Optimize Data Storage Format for Power BI**  
+   - **Use Parquet Format** for optimized **query performance** in Power BI.  
+   - **Partition Data by Date** to speed up queries:  
+     ```
+     /transactions/year=2025/month=03/day=10/transactions.parquet
+     ```
+
+✅ **Enable Lifecycle Policies**  
+   - Configure **automatic deletion** for old files beyond **90 days** to optimize storage costs.  
+
+---
+
+### **Step 4: Connect Azure Storage to Power BI**
+✅ **Configure Power BI Dataflow to Read from Azure Storage**  
+   - **Power BI Service → Dataflows → New Dataflow**.  
+   - Select **"Azure Blob Storage" or "Azure Data Lake"** as the data source.  
+   - **Connect using Storage Account Key or Managed Identity**.  
+   - Select **"transactions.parquet"** file and load into Power BI.  
+
+✅ **Transform Data in Power Query**  
+   - **Filter data** to remove duplicates or unnecessary columns.  
+   - Convert **timestamps into local timezone format**.  
+   - Aggregate data for **faster report loading** (e.g., average response time by service).  
+
+✅ **Schedule Refresh in Power BI Service**  
+   - Navigate to **Dataset Settings → Scheduled Refresh**.  
+   - Set refresh frequency **(every 30 minutes or as needed)**.  
+
+---
+
+### **Step 5: Create Power BI Visualizations**
+✅ **Design Key Metrics in Power BI Dashboard**  
+   - **KPI Cards for Real-Time Monitoring**  
+     - 🟢 **Service Uptime (%)**  
+     - 📊 **API Latency (ms)**  
+     - ✅ **Transaction Throughput (TPS)**  
+   - **Time-Series Charts**  
+     - **Response Time Trends by Service**  
+     - **Error Rate % Over Time**  
+   - **Drill-Down Reports**  
+     - Click **on failed transactions** to view **detailed API logs**.  
+
+✅ **Apply Row-Level Security (RLS)**  
+   - Define **RLS roles for different user groups** in Power BI.  
+   - Example:  
+     ```DAX
+     [Department] = USERPRINCIPALNAME()
+     ```
+
+---
+
+## **3️⃣ Summary: Why Use This Approach?**
+✅ **Performance Optimization**:  
+   - ADF extracts only **incremental changes**, reducing **query load on Azure SQL**.  
+   - Parquet files in **Azure Storage** provide **faster read performance for Power BI**.  
+
+✅ **Scalability**:  
+   - Supports **millions of transactions** without slowing down Power BI reports.  
+   - Power BI **queries pre-processed data** instead of **running expensive SQL queries**.  
+
+✅ **Security & Compliance**:  
+   - **RBAC-controlled access to Azure SQL, Storage, and Power BI reports**.  
+   - **Audit logs & encryption policies enforced** via Azure Security Center.  
+
+🚀 **Final Outcome**: A **scalable, secure, and real-time transaction monitoring solution** using **Azure SQL, ADF, Storage, and Power BI**.
+
 
 ### **7.1 Best Practices for System Health Dashboard (SHD) in Power BI**  
 
