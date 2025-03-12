@@ -1,5 +1,124 @@
 # Powerbi-Reporting
 
+
+### **7.1 Best Practices for System Health Dashboard (SHD) in Power BI**  
+
+Ensuring the **System Health Dashboard (SHD)** delivers **accurate, real-time insights** while maintaining **performance, security, and scalability** requires adherence to **best practices**. Below are key recommendations for optimizing **data integration, visualization, security, and efficiency** when working with **Power BI, MFTS, SIP, MES Portal, and Azure Metrics**.
+
+---
+
+## **1️⃣ Data Integration & Connectivity Best Practices**
+🔹 **Use DirectQuery for Real-Time Metrics**  
+   - Instead of relying on imported datasets, **DirectQuery** enables Power BI to **query data live from Azure Monitor, Log Analytics, and SQL databases**.  
+   - **Example:** Fetching **SIP API response times** directly from **Azure Monitor Logs** ensures up-to-date API latency tracking.  
+
+🔹 **Optimize Scheduled Refresh for Near Real-Time Data**  
+   - **Set refresh intervals based on data update frequency** (e.g., every **15 minutes for API logs**, every **hour for storage metrics**).  
+   - **Use Incremental Refresh** to load only new data instead of reloading the entire dataset.  
+   - **Example:** Refresh **Azure Storage MFTS logs** every 30 minutes while keeping incident reports on a **4-hour refresh cycle**.  
+
+🔹 **Use Power BI Dataflows for Pre-Processing**  
+   - Offload **heavy data transformations** to **Power BI Dataflows** instead of processing large datasets on the report side.  
+   - **Example:** Transforming **ServiceNow incident logs** before loading them into Power BI improves performance.  
+
+🔹 **Use Azure Data Factory for ETL Operations**  
+   - For large-scale transformations, use **Azure Data Factory** to **extract, transform, and load (ETL)** data into **Azure SQL or Storage** before Power BI reads it.  
+   - **Example:** Collecting **MFTS transaction logs**, filtering out irrelevant data, and storing it in an optimized **Azure SQL table**.
+
+---
+
+## **2️⃣ Performance Optimization for Power BI Reports**
+🔹 **Reduce Data Model Size with Aggregations**  
+   - Implement **aggregated tables** in Power BI for high-cardinality datasets like **transaction logs and API metrics**.  
+   - Use **pre-aggregated data views** in **Azure SQL** to reduce load time for Power BI queries.  
+
+🔹 **Optimize DAX Queries**  
+   - Use **variables** (`VAR`) in DAX to improve performance by reducing repeated calculations.  
+   - Avoid using **FILTER() inside CALCULATE()**, as it can slow down queries.  
+   - **Example DAX Optimization:**  
+     ```DAX
+     VAR SuccessRate = DIVIDE([Successful Transactions], [Total Transactions], 0)
+     RETURN SuccessRate
+     ```
+
+🔹 **Leverage Power BI Composite Models**  
+   - Combine **Import Mode for static datasets** (e.g., configuration data) and **DirectQuery for dynamic data** (e.g., SIP API logs).  
+   - **Example:** Load **historical ServiceNow ticket data** in **Import Mode**, while using **DirectQuery for live SLA compliance tracking**.  
+
+🔹 **Optimize Query Folding in Power Query**  
+   - Use query folding to **push data transformations** to the source system, reducing load on Power BI.  
+   - **Example:** Instead of filtering data in Power BI, apply **WHERE conditions** in Azure SQL to return only **relevant incident logs**.
+
+---
+
+## **3️⃣ Security & Access Control Best Practices**
+🔹 **Implement Row-Level Security (RLS) for Role-Based Access**  
+   - Restrict **Power BI dashboard views** based on user roles.  
+   - Example RLS Rules:
+     - **MES Admins** → Full system health reports.  
+     - **SIP Engineers** → API and integration logs only.  
+     - **Security Teams** → Authentication failures and compliance reports.  
+   - **DAX Example for RLS**:  
+     ```DAX
+     UserTable[Department] = USERPRINCIPALNAME()
+     ```
+
+🔹 **Secure API Keys & Credentials**  
+   - Store **ServiceNow API keys, Azure SQL credentials, and Log Analytics workspace IDs** securely using **Azure Key Vault** instead of hardcoding them.  
+
+🔹 **Apply Power BI Sensitivity Labels**  
+   - Use **Microsoft Information Protection (MIP)** to classify reports containing **PII or financial data**.  
+   - Example:
+     - **Confidential** – Financial claims and provider payment data.  
+     - **Restricted** – Patient-sensitive logs.  
+
+🔹 **Enable Multi-Factor Authentication (MFA) for Access**  
+   - Require **MFA for Power BI Service access**, especially for admins with **privileged access to MES reports**.  
+
+---
+
+## **4️⃣ Visualization & Usability Best Practices**
+🔹 **Use KPI Indicators for System Health Monitoring**  
+   - Implement **color-coded indicators** to highlight anomalies:
+     - **🟢 Green** – System Healthy  
+     - **🟡 Yellow** – Performance Degrading  
+     - **🔴 Red** – Critical Failure  
+   - Example: **SLA compliance below 95% triggers a red warning on the dashboard.**  
+
+🔹 **Enable Drill-Through Reports for Root Cause Analysis**  
+   - Users should **click an error count** and drill through to **detailed API failure logs or ServiceNow incident tickets**.  
+
+🔹 **Design Dashboards for Different User Personas**  
+   - **Executives** → Summary KPIs & SLA compliance.  
+   - **IT Operations** → System uptime & error trends.  
+   - **Developers** → Detailed API logs & response times.  
+
+🔹 **Limit Visual Elements Per Page for Performance**  
+   - Avoid too many visuals per page; **optimize rendering speed** by **grouping related insights** into separate reports.  
+   - **Example:** Separate **MFTS Metrics, SIP API Performance, and MES Portal Logs** into different tabs instead of one crowded dashboard.  
+
+---
+
+## **5️⃣ Monitoring & Maintenance Best Practices**
+🔹 **Set Up Power BI Data Refresh Alerts**  
+   - Configure **failure alerts** if dataset refresh **fails multiple times**.  
+   - Example: **Use Azure Monitor to trigger an email alert if Power BI fails to refresh data from ServiceNow API.**  
+
+🔹 **Monitor Power BI Performance in the Admin Portal**  
+   - Regularly check **Power BI capacity usage** to **identify slow-loading reports or bottlenecks**.  
+
+🔹 **Enable Usage Analytics to Track Report Interactions**  
+   - Use **Power BI Service Usage Metrics** to track **which users access dashboards and how frequently**.  
+   - Example: **Identify underutilized reports to optimize dashboard design.**  
+
+🔹 **Implement Version Control for Power BI Reports**  
+   - Use **Power BI Deployment Pipelines** to manage **Dev, Test, and Production versions** of dashboards.  
+
+---
+
+### **Conclusion**
+By following these best practices, the **System Health Dashboard (SHD)** will remain **scalable, secure, and high-performing**, enabling **Medicaid IT teams to proactively monitor** the health of **SIP, MFTS, MES Portal, and Azure environments** in Power BI. 🚀
+
 ### **Developer’s Guide: System Health Dashboard (SHD) in Power BI for MFTS, SIP, MES Portal, and Azure Metrics**  
 
 #### **Introduction**  
