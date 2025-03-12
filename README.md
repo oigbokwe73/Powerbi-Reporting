@@ -1,5 +1,187 @@
 # Powerbi-Reporting
 
+# **Detailed Steps for Implementing Logging in System Health Dashboard (SHD) with Azure & ServiceNow**  
+
+Logging is essential for **tracking system performance, API transactions, security events, and service reliability** in the **System Health Dashboard (SHD)**. This guide details the **end-to-end logging process**, integrating **Azure Monitor, Log Analytics, Azure Storage, Power BI, and ServiceNow** for efficient monitoring and issue resolution.
+
+---
+
+## **1️⃣ Logging Architecture Overview**  
+
+```mermaid
+graph TD
+    A[Azure Services] -->|Diagnostic Logs| B[Azure Monitor]
+    B -->|Log Collection| C[Azure Log Analytics]
+    C -->|Store & Archive| D[Azure Storage]
+    C -->|Send Incidents| E[ServiceNow]
+    C -->|Power BI Logs| F[Power BI Service]
+    E -->|ITSM Alerts| G[Service Desk]
+    F -->|Real-Time Visualization| H[System Health Dashboard]
+```
+
+### **Key Components:**
+- **Azure Monitor**: Collects logs from **MFTS, SIP, MES Portal, Azure SQL, and Azure Services**.
+- **Azure Log Analytics**: Stores logs and enables advanced querying.
+- **Azure Storage**: Provides **long-term retention** for compliance and audit logs.
+- **ServiceNow ITSM**: Generates **incidents for system failures, security breaches, and SLAs**.
+- **Power BI**: **Visualizes logs** for monitoring and analysis.
+
+---
+
+## **2️⃣ Configuring Azure Logging for System Health Dashboard**
+### **Step 1: Enable Diagnostic Logging for Azure Services**
+✅ **Enable Logging for MFTS, SIP, MES Portal & Azure SQL**
+1. Go to **Azure Portal → Resource Groups → Select Service**.
+2. Navigate to **Monitoring → Diagnostic Settings**.
+3. Click **"Add Diagnostic Setting"**.
+4. Select **Log Categories**:
+   - **MFTS Logs** (File Transfers, Success/Failure Rate)
+   - **SIP API Logs** (Latency, Throughput, Error Rate)
+   - **MES Portal Logs** (User Access, Authentication)
+   - **Azure SQL Logs** (Query Performance, Deadlocks)
+5. **Send logs to**:
+   - ✅ **Azure Monitor**
+   - ✅ **Azure Log Analytics**
+   - ✅ **Azure Storage (For archival & compliance)**
+   - ✅ **Event Hub (For real-time processing in ServiceNow)**
+
+---
+
+### **Step 2: Configure Log Analytics for Querying Logs**
+✅ **Enable Log Collection in Log Analytics Workspace**
+1. Navigate to **Azure Monitor → Log Analytics Workspaces**.
+2. Create a new workspace or select an existing one.
+3. Go to **Data Sources** → Add:
+   - **Azure SQL Logs**
+   - **Storage Logs**
+   - **Function App Logs (For MFTS Processing)**
+   - **Service Bus Logs (For SIP Transactions)**
+4. Use **Kusto Query Language (KQL)** to retrieve logs:
+   ```kql
+   AzureDiagnostics
+   | where ResourceType == "APIManagementService"
+   | summarize AvgLatency=avg(ResponseTime), ErrorCount=countif(ResponseCode >= 400)
+   | by bin(TimeGenerated, 1h)
+   ```
+
+---
+
+### **Step 3: Store & Archive Logs in Azure Storage**
+✅ **Enable Log Retention in Azure Storage**
+1. Navigate to **Azure Storage Account**.
+2. Enable **Blob Storage Logging**.
+3. Configure **Lifecycle Policy**:
+   - **Retain logs for 30 days** in Hot Tier.
+   - **Move logs older than 90 days** to **Cool Tier**.
+   - **Delete logs older than 1 year**.
+
+---
+
+## **3️⃣ Integrating ServiceNow with Azure Logging**
+### **Step 4: Configure Azure Monitor to Send Logs to ServiceNow**
+✅ **Set Up Azure Monitor Alerts to ServiceNow**
+1. Go to **Azure Monitor → Alerts**.
+2. Click **"New Alert Rule"**.
+3. Define **alert conditions**:
+   - **MFTS Failure Rate > 5%**  
+   - **SIP API Latency > 500ms**  
+   - **MES Portal Login Failures > 50 per hour**  
+4. Set **Action Group** → **Send to ServiceNow API**:
+   - **Webhook URL**:  
+     ```
+     https://your-instance.service-now.com/api/now/table/incident
+     ```
+   - Authentication: **OAuth 2.0**.
+   - Payload:
+     ```json
+     {
+       "short_description": "MFTS Failure Detected",
+       "category": "IT Services",
+       "impact": "High",
+       "urgency": "Critical",
+       "assigned_to": "Service Desk"
+     }
+     ```
+
+---
+
+### **Step 5: ServiceNow Incident Automation for Logging Failures**
+✅ **Configure Incident Workflows in ServiceNow**
+1. Go to **ServiceNow → Workflow Editor**.
+2. Create a **New Workflow**:
+   - Trigger: **API Request from Azure Monitor**.
+   - Action: **Create an Incident**.
+3. Define **Incident Severity Based on Logs**:
+   - **Priority 1 (Critical)** – System Outage Detected.
+   - **Priority 2 (High)** – High API Failure Rate.
+   - **Priority 3 (Medium)** – User Login Issues.
+
+---
+
+## **4️⃣ Power BI Integration for Log Visualization**
+### **Step 6: Connect Power BI to Log Analytics**
+✅ **Get Data from Log Analytics into Power BI**
+1. Open **Power BI Desktop** → Click **Get Data**.
+2. Select **Azure Monitor Logs**.
+3. Enter **Log Analytics Workspace ID**.
+4. Use **KQL Queries** to Fetch Logs:
+   ```kql
+   AzureDiagnostics
+   | where ResourceType == "SQLDatabase"
+   | summarize FailedQueries=count() by bin(TimeGenerated, 1h)
+   ```
+
+✅ **Schedule Power BI Data Refresh**
+- Set **refresh frequency** to **15-30 minutes**.
+
+---
+
+### **Step 7: Visualize Log Data in Power BI**
+✅ **Create System Health Dashboard Components**
+1. **System Uptime Monitoring**  
+   - KPI Card: **Availability (%)**  
+   - Line Chart: **Downtime Over Time**  
+
+2. **API Performance Metrics**  
+   - Line Chart: **Response Time Trends**  
+   - Stacked Bar: **Success vs. Failed Transactions**  
+
+3. **Security & Compliance Logs**  
+   - Bar Chart: **Failed Logins by Location**  
+   - Pie Chart: **Incident Type Distribution**  
+
+4. **ServiceNow Incident Analysis**  
+   - Column Chart: **Incident Count by Severity**  
+   - Donut Chart: **Resolution Time Trends**  
+
+---
+
+## **5️⃣ Monitoring & Alerts**
+### **Step 8: Enable Real-Time Alerts & Automated Responses**
+✅ **Configure Azure Sentinel for Advanced Threat Detection**
+1. Navigate to **Azure Sentinel**.
+2. Create **Alert Rules**:
+   - **Multiple Failed Logins from Unusual Locations**
+   - **API Response Time Degradation**
+   - **SLA Violations in ServiceNow Incidents**
+3. Integrate with **Microsoft Defender for Cloud**.
+
+✅ **Enable ServiceNow Ticketing Automation**
+- If **incident severity = HIGH**, auto-assign to **on-call engineer**.
+- If **repeat failure > 3 times**, escalate to **Tier 2 Support**.
+
+---
+
+## **6️⃣ Summary: End-to-End Logging Flow**
+### **🔹 What Happens When an Issue Occurs?**
+1️⃣ **Azure SQL Fails to Respond** → Log sent to **Azure Monitor**.  
+2️⃣ **Azure Monitor Alert** triggers a webhook → **ServiceNow creates an incident**.  
+3️⃣ **Azure Storage Archives Logs** for compliance.  
+4️⃣ **Power BI Refreshes Data** → Dashboard updates in real-time.  
+5️⃣ **IT Team Investigates via ServiceNow** → Fixes the issue.  
+
+✅ **Outcome**: **Real-time, automated, and actionable logging for system health tracking!** 🚀
+
 ### **Detailed Steps for Logging in the System Health Dashboard (SHD) – Power BI, MFTS, SIP, MES Portal, Azure Metrics**  
 
 Logging is essential for **tracking system health, monitoring performance, auditing activities, and ensuring compliance** across **MFTS, SIP, MES Portal, and Azure services**. This guide covers **configuring, collecting, storing, and analyzing logs** in **Power BI, Azure Monitor, Log Analytics, and Azure Storage**.
