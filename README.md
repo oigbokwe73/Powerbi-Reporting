@@ -199,6 +199,7 @@ graph TD
     B -->|Historical Logs| I
     D -->|Real-time API Logs| I
     F -->|User Activity Reports| I
+    G -->|Service Now| I
 ```
 ---
 
