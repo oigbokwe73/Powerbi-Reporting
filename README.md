@@ -18,7 +18,7 @@ graph TD
     D[SIP API Metrics] -->|API Logs & Transactions| B
     E[MES Portal Access Logs] -->|User Activity| B
     F[Azure Metrics VMs, SQL, Storage] -->|Resource Usage| B
-    B -->|Visualized Reports| G[System Health Dashboard (SHD)]
+    B -->|Visualized Reports| G[System Health Dashboard -SHD]
     G -->|Role-Based Access| H[Authorized Users MES Admins, IT, Support]
 ```
 
