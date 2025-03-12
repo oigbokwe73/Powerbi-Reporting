@@ -11,7 +11,7 @@ Logging is essential for **tracking system health, monitoring performance, audit
 graph TD
     A[MFTS File Transfer Logs] -->|Logs to| B[Azure Storage]
     C[SIP API Logs] -->|Logs to| D[Azure Monitor & Log Analytics]
-    E[MES Portal User Activity] -->|Authentication Logs| F[Azure Entra ID (AAD) Logs]
+    E[MES Portal User Activity] -->|Authentication Logs| F[Azure Entra ID - AAD Logs]
     G[Azure Resource Logs] -->|VM, SQL, Storage Logs| H[Azure Monitor]
     H -->|Processed Logs| I[Power BI]
     B -->|Historical Logs| I
