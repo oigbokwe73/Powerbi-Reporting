@@ -17,9 +17,9 @@ graph TD
     C[MFTS Logs] -->|File Transfer Data| B
     D[SIP API Metrics] -->|API Logs & Transactions| B
     E[MES Portal Access Logs] -->|User Activity| B
-    F[Azure Metrics (VMs, SQL, Storage)] -->|Resource Usage| B
+    F[Azure Metrics VMs, SQL, Storage] -->|Resource Usage| B
     B -->|Visualized Reports| G[System Health Dashboard (SHD)]
-    G -->|Role-Based Access| H[Authorized Users (MES Admins, IT, Support)]
+    G -->|Role-Based Access| H[Authorized Users MES Admins, IT, Support]
 ```
 
 ---
