@@ -1,5 +1,149 @@
 # Powerbi-Reporting
 
+### **Detailed Steps for Logging in the System Health Dashboard (SHD) – Power BI, MFTS, SIP, MES Portal, Azure Metrics**  
+
+Logging is essential for **tracking system health, monitoring performance, auditing activities, and ensuring compliance** across **MFTS, SIP, MES Portal, and Azure services**. This guide covers **configuring, collecting, storing, and analyzing logs** in **Power BI, Azure Monitor, Log Analytics, and Azure Storage**.
+
+---
+
+## **1️⃣ Logging Architecture Overview**  
+```mermaid
+graph TD
+    A[MFTS File Transfer Logs] -->|Logs to| B[Azure Storage]
+    C[SIP API Logs] -->|Logs to| D[Azure Monitor & Log Analytics]
+    E[MES Portal User Activity] -->|Authentication Logs| F[Azure Entra ID (AAD) Logs]
+    G[Azure Resource Logs] -->|VM, SQL, Storage Logs| H[Azure Monitor]
+    H -->|Processed Logs| I[Power BI]
+    B -->|Historical Logs| I
+    D -->|Real-time API Logs| I
+    F -->|User Activity Reports| I
+```
+---
+
+## **2️⃣ Step-by-Step Configuration of Logging**  
+
+### **Step 1: Enable Logging for MFTS File Transfers**
+✅ **Enable Diagnostic Logging for Azure Storage (MFTS Logs)**
+1. Navigate to **Azure Portal → Storage Account → Monitoring → Diagnostic Settings**.  
+2. Click **"Add Diagnostic Setting"** and enable logging for:  
+   - **Blob Storage (File Upload & Access Logs)**  
+   - **Queue Storage (MFTS Processing Events)**  
+3. Select **"Send to Log Analytics"** for real-time monitoring.  
+
+✅ **Store Logs in Azure Storage for Archival**
+- Logs can also be exported to **Azure Data Lake for historical analysis**.  
+
+---
+
+### **Step 2: Configure Logging for SIP API Calls**
+✅ **Enable API Logging in Azure API Management**
+1. Navigate to **Azure API Management → APIs → Select API**.  
+2. Under **"Monitoring"**, enable **Azure Monitor Diagnostics**.  
+3. Configure **logging categories**:  
+   - **Request & Response Time**  
+   - **HTTP Status Codes (Success/Failure)**  
+   - **Error Rate %**  
+
+✅ **Enable Log Analytics for SIP API Logs**
+- SIP API logs are sent to **Azure Monitor Log Analytics** using the **KQL query below**:  
+  ```kql
+  AzureDiagnostics
+  | where ResourceType == "APIManagementService"
+  | summarize AvgLatency=avg(ResponseTime), ErrorRate=avg(ErrorCount) by bin(TimeGenerated, 1h)
+  ```
+
+✅ **Create Alerts for API Failures**
+- Set up **Azure Monitor Alerts** to trigger notifications when:
+  - **API latency > 500ms**
+  - **Error rate > 5%**
+  - **SIP transaction failures exceed threshold**
+
+---
+
+### **Step 3: Capture MES Portal User Authentication Logs**
+✅ **Enable Sign-In & Access Logs in Azure Entra ID**
+1. Go to **Azure Portal → Azure Entra ID → Monitoring → Sign-In Logs**.  
+2. Enable **audit logs for login failures, MFA authentication, and access changes**.  
+3. Send logs to **Log Analytics Workspace for analysis**.  
+
+✅ **Monitor User Access Logs in Power BI**
+- Use **KQL query** to extract failed authentication attempts:  
+  ```kql
+  SigninLogs
+  | where ResultType != "Success"
+  | summarize FailedLogins=count() by bin(TimeGenerated, 1h)
+  ```
+
+✅ **Enable Role-Based Logging**
+- Restrict logging access to **MES Admins, Security Teams, and IT Operations** using **RBAC policies**.
+
+---
+
+### **Step 4: Collect & Store Azure Resource Logs (VMs, SQL, Storage)**
+✅ **Enable Diagnostic Settings for Azure Virtual Machines**
+1. Navigate to **Azure Portal → Virtual Machines → Monitoring → Diagnostic Settings**.  
+2. Enable logs for:  
+   - **CPU, Memory, Disk Utilization**  
+   - **Network Traffic**  
+   - **Security Logs (Failed Access Attempts)**  
+3. Select **"Send to Log Analytics"** for real-time monitoring.  
+
+✅ **Enable SQL Query Performance Logs**
+1. Go to **Azure SQL Database → Monitoring → Query Performance Insight**.  
+2. Enable logging for:  
+   - **Query Duration & Execution Time**  
+   - **Deadlocks & Blocking Issues**  
+   - **Failed Transactions**  
+
+✅ **Store Logs in Azure Storage**
+- Configure **Azure Storage Lifecycle Management** to retain logs for **up to 2 years**.
+
+---
+
+## **3️⃣ Integrating Logs with Power BI**
+### **Step 5: Connect Power BI to Log Analytics for System Health Reports**
+✅ **Retrieve System Logs in Power BI**  
+1. Open **Power BI Desktop → Get Data → Azure Monitor Logs**.  
+2. Enter **Log Analytics Workspace ID**.  
+3. Use **KQL Queries** to fetch SIP, MFTS, MES, and Azure logs.  
+
+✅ **Transform Log Data for Reporting**  
+- Aggregate logs **by service, time, and event types**.  
+- Example **DAX formula** for error rate visualization:  
+  ```DAX
+  ErrorRate = DIVIDE([Failed Transactions], [Total Transactions], 0) * 100
+  ```
+
+✅ **Schedule Data Refresh**  
+- Set **15-minute refresh intervals** for real-time system health monitoring.  
+
+---
+
+## **4️⃣ Monitoring & Alerting for Logs**
+### **Step 6: Enable Alerts & Automated Monitoring**
+✅ **Azure Monitor Alerts for Critical Issues**
+- **SIP API latency spikes (>500ms)**
+- **MFTS file transfer failures (>5%)**
+- **MES Portal failed logins (>10 per minute)**  
+
+✅ **Power BI Dashboard Alerts**
+- Use **Power BI Service Alerts** to notify admins about **service degradation**.
+
+✅ **Log Retention Policies**
+- **Archive logs in Azure Storage (90 days retention for cost savings)**.  
+- **Keep critical security logs for 1 year for compliance**.
+
+---
+
+## **5️⃣ Summary of Logging Best Practices**
+✅ **Centralized Logging in Azure Monitor & Log Analytics**  
+✅ **Store & Archive Logs in Azure Storage for Auditing**  
+✅ **Enable Role-Based Access to Sensitive Logs**  
+✅ **Use Power BI for Real-Time System Health Dashboards**  
+✅ **Configure Alerts for Critical Failures**  
+
+🚀 **Outcome**: A **secure, scalable, and real-time monitoring system** for **MFTS, SIP, MES Portal, and Azure resources** in Power BI.
+
 ### **Steps on Application Configuration for the System Health Dashboard (SHD) in Power BI**  
 
 To configure the **System Health Dashboard (SHD)** for monitoring **MFTS, SIP, MES Portal, and Azure Metrics**, follow these steps:
