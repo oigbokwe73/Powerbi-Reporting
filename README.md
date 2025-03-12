@@ -1,5 +1,174 @@
 # Powerbi-Reporting
 
+### **Steps on Application Configuration for the System Health Dashboard (SHD) in Power BI**  
+
+To configure the **System Health Dashboard (SHD)** for monitoring **MFTS, SIP, MES Portal, and Azure Metrics**, follow these steps:
+
+---
+
+## **1️⃣ Set Up Data Sources & Connect to Power BI**
+### **Step 1: Configure Data Sources in Azure**  
+✅ **Azure Log Analytics Configuration**  
+   - Go to **Azure Portal** → Navigate to **Log Analytics Workspace**.  
+   - Enable **Diagnostic Settings** for:
+     - **MFTS (File Transfer Metrics)**
+     - **SIP (API Logs)**
+     - **MES Portal (Authentication Logs)**
+     - **Azure Resources (VMs, Storage, SQL)**  
+   - Select **"Send to Log Analytics"** and define the retention policy.  
+
+✅ **Azure Storage Configuration for MFTS Logs**  
+   - Create an **Azure Storage Account**.  
+   - Enable **Storage Analytics Logging** to track file transfers.  
+
+✅ **ServiceNow API Configuration (For Incident Management Data)**  
+   - In ServiceNow, go to **System Web Services → REST API Explorer**.  
+   - Generate API endpoint:  
+     ```
+     https://your-instance.service-now.com/api/now/table/incident
+     ```
+   - Create a service account with **read-only permissions** to fetch incident logs.  
+
+✅ **Azure SQL Configuration (For Transaction & SLA Data)**  
+   - Deploy **Azure SQL Database**.  
+   - Set up **tables for transactional data** (e.g., Claims Processing, Provider Requests).  
+   - Configure **Row-Level Security (RLS) for role-based access control**.  
+
+---
+
+## **2️⃣ Power BI Data Connection Setup**
+### **Step 2: Connect Data Sources to Power BI**
+✅ **Connect to Azure Log Analytics**  
+   - Open **Power BI Desktop** → Click **Get Data** → Select **Azure Monitor Logs**.  
+   - Enter the **Log Analytics Workspace ID & Key**.  
+   - Use **KQL Queries** to pull system health data:  
+     ```kql
+     AzureDiagnostics
+     | where ResourceType == "APIManagementService"
+     | summarize AvgLatency=avg(ResponseTime) by bin(TimeGenerated, 1h)
+     ```
+
+✅ **Connect to Azure Storage for MFTS Logs**  
+   - Go to **Get Data → Azure Blob Storage**.  
+   - Enter the **Storage Account Name & Key**.  
+   - Load **file transfer logs for MFTS performance tracking**.  
+
+✅ **Connect to ServiceNow API for ITSM Data**  
+   - Go to **Get Data → Web Connector**.  
+   - Enter **ServiceNow API URL** and credentials.  
+   - Select **incident fields** such as **status, priority, resolution time**.  
+
+✅ **Connect to Azure SQL for Transaction Data**  
+   - Go to **Get Data → Azure SQL Database**.  
+   - Enter **server name, database name, and credentials**.  
+   - Use SQL query to fetch key metrics:  
+     ```sql
+     SELECT 
+       TransactionID, ServiceName, ResponseTime, ErrorRate, Timestamp 
+     FROM TransactionLogs
+     WHERE Timestamp >= DATEADD(DAY, -30, GETDATE())
+     ```
+
+---
+
+## **3️⃣ Configure Data Modeling & Relationships**
+### **Step 3: Define Data Relationships**
+✅ **Establish Relationships in Power BI Model View**  
+   - **MFTS Logs ↔ SIP API Logs ↔ MES User Activity ↔ Azure SQL Transactions**.  
+   - Use **common keys** (e.g., `TransactionID`, `UserID`, `ServiceName`).  
+
+✅ **Create Custom Measures in DAX for Performance Metrics**  
+   - **API Success Rate:**  
+     ```DAX
+     SuccessRate = DIVIDE([Successful Transactions], [Total Transactions], 0)
+     ```
+   - **System Uptime Percentage:**  
+     ```DAX
+     Uptime = (1 - [Downtime Hours] / 24) * 100
+     ```
+   - **SLA Compliance Calculation:**  
+     ```DAX
+     SLACompliance = IF([ResponseTime] < 200, "Compliant", "Non-Compliant")
+     ```
+
+---
+
+## **4️⃣ Configure Role-Based Access Control (RBAC)**
+### **Step 4: Implement Security & Permissions**
+✅ **Set Row-Level Security (RLS) in Power BI**  
+   - Define roles for different **user groups** (Admins, Analysts, IT Support).  
+   - **DAX Example for Restricted Access:**  
+     ```DAX
+     UserTable[Department] = USERPRINCIPALNAME()
+     ```
+
+✅ **Enable Azure Entra ID (Azure AD) for Authentication**  
+   - Configure **Power BI Service Authentication** via **Azure AD**.  
+   - Restrict access to **authorized Medicaid IT personnel only**.  
+
+✅ **Apply Sensitivity Labels in Power BI**  
+   - Use **Microsoft Information Protection (MIP)** to classify reports:
+     - **Confidential** – SLA & transaction data.  
+     - **Restricted** – Authentication logs & security events.  
+
+---
+
+## **5️⃣ Build Power BI Dashboards & Visuals**
+### **Step 5: Design System Health Dashboard**
+✅ **Create KPI Indicators for Real-Time Monitoring**  
+   - Use **Conditional Formatting** for SLA compliance (✅ Green: OK, ⚠️ Yellow: Warning, ❌ Red: Issue).  
+   - **Example KPI Cards:**  
+     - **Service Uptime (%)**  
+     - **API Latency (ms)**  
+     - **MFTS Transfer Success Rate**  
+
+✅ **Implement Drill-Through Reports for Root Cause Analysis**  
+   - Users should **click an API failure rate metric** and see **detailed error logs**.  
+
+✅ **Optimize Power BI Dashboard Performance**  
+   - Limit visual elements per report page.  
+   - Use **Aggregated Tables** for large datasets.  
+   - Implement **Query Folding** in Power Query.  
+
+---
+
+## **6️⃣ Configure Scheduled Refresh & Monitoring**
+### **Step 6: Automate Data Refresh & Performance Monitoring**
+✅ **Set Up Scheduled Refresh in Power BI Service**  
+   - **Go to Power BI Service → Datasets → Scheduled Refresh**.  
+   - Configure **refresh frequency** based on data latency:
+     - **Azure Monitor & API Logs** → Every **15 minutes**.  
+     - **MFTS & ServiceNow Logs** → Every **30 minutes**.  
+     - **Transaction Data (SQL)** → Every **1 hour**.  
+
+✅ **Enable Alerts for Critical Failures**  
+   - Use **Azure Monitor** to trigger alerts when:
+     - **Service Uptime < 99%**  
+     - **API Latency > 500ms**  
+     - **MFTS Error Rate > 5%**  
+
+✅ **Monitor Power BI Report Performance**  
+   - Track **dashboard load times** and optimize queries.  
+
+---
+
+## **7️⃣ Deployment & Maintenance**
+### **Step 7: Deploy & Maintain SHD Application**
+✅ **Use Power BI Deployment Pipelines**  
+   - Deploy dashboards across **Dev, Test, and Production environments**.  
+
+✅ **Enable Power BI Usage Analytics**  
+   - Monitor **user activity, report interactions, and refresh success rates**.  
+
+✅ **Regularly Review Data Security & Compliance**  
+   - Audit access logs to ensure **RBAC policies are enforced**.  
+   - Update **data retention policies** for compliance with **HIPAA & Medicaid guidelines**.  
+
+---
+
+## **🎯 Conclusion**
+By following these **application configuration steps**, the **System Health Dashboard (SHD) in Power BI** will be fully integrated with **Azure Monitor, Log Analytics, ServiceNow, and SQL databases**, enabling **real-time insights, proactive monitoring, and data-driven decision-making** for Medicaid operations. 🚀
+
 ### **Expanded Guide: Connecting Azure SQL for Transaction Data (SQL → ADF → Azure Storage → Power BI)**  
 
 This section provides a detailed step-by-step guide for **ingesting, transforming, and visualizing transaction data from Azure SQL into Power BI** using **Azure Data Factory (ADF) and Azure Storage**. This architecture ensures **scalability, data transformation efficiency, and optimal Power BI performance**.
