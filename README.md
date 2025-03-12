@@ -10,8 +10,8 @@ This section provides a detailed step-by-step guide for **ingesting, transformin
 
 ```mermaid
 graph TD
-    A[Azure SQL Database] -->|Extract| B[Azure Data Factory (ADF)]
-    B -->|Transform & Load| C[Azure Storage (Blob/Data Lake)]
+    A[Azure SQL Database] -->|Extract| B[Azure Data Factory ADF]
+    B -->|Transform & Load| C[Azure Storage Blob/Data Lake]
     C -->|Power BI Dataflow| D[Power BI Service]
     D -->|Scheduled Refresh| E[Power BI Dashboard]
 ```
