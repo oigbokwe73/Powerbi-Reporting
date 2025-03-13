@@ -1,5 +1,193 @@
 # Powerbi-Reporting
 
+# **Performance Testing: Power BI Connecting to Data Sources**  
+
+## **Introduction**  
+Power BI performance testing is essential to **ensure optimal report loading times, query execution efficiency, and scalability** when connecting to large and complex data sources such as **Azure SQL, Azure Storage, Log Analytics, and ServiceNow**. **Bottlenecks in Power BI performance** typically arise due to **slow queries, inefficient data models, or high-frequency data refreshes**. This guide covers **best practices, testing methodologies, and optimization techniques** for Power BI performance when connecting to various data sources.
+
+---
+
+## **1️⃣ Key Performance Factors in Power BI Connectivity**
+When testing Power BI performance, consider these critical factors:
+
+### **1.1 Data Source Type & Query Mode**
+✅ **DirectQuery**  
+   - Queries **live data** from the data source without storing it in Power BI.  
+   - Ideal for **real-time dashboards**, but **slow performance if queries are inefficient**.  
+
+✅ **Import Mode**  
+   - **Pre-loads data into Power BI memory (VertiPaq Engine)**.  
+   - Fast performance but **requires scheduled refreshes** to stay updated.  
+
+✅ **Hybrid Mode (Composite Models)**  
+   - Uses **Import Mode** for frequently accessed data.  
+   - Uses **DirectQuery** for real-time data without excessive memory usage.  
+
+### **1.2 Query Complexity & Execution Time**
+✅ **Long-running SQL queries** slow down Power BI performance.  
+✅ **Nested joins, cross-database queries, and large result sets** impact efficiency.  
+✅ **Optimized indexing and partitioning** on the source database improves response time.  
+
+### **1.3 Data Refresh Frequency**
+✅ **Frequent refreshes (e.g., every 5 min)** cause performance degradation.  
+✅ **Use Incremental Refresh** instead of full dataset refresh.  
+
+### **1.4 Network Latency & Data Transfer Size**
+✅ Large data transfers from **Azure SQL, ServiceNow, or APIs** impact Power BI performance.  
+✅ **Minimize data load size** with optimized queries and filtering.  
+
+---
+
+## **2️⃣ Performance Testing Scenarios for Power BI**
+### **2.1 Query Execution Performance (DirectQuery Mode)**
+**Goal:** Measure response time for Power BI when querying **Azure SQL, ServiceNow, or Log Analytics** in **DirectQuery mode**.  
+
+✅ **Testing Steps**  
+1. **Run Power BI Performance Analyzer** → Identify long-running queries.  
+2. **Execute KQL/SQL queries manually** → Measure execution time.  
+3. **Apply query optimizations** (e.g., indexing, query folding).  
+4. **Re-run Power BI report & compare results**.  
+
+✅ **KQL Query Test Example (Azure Log Analytics)**
+```kql
+AzureDiagnostics
+| where ResponseTime > 500
+| summarize AvgLatency=avg(ResponseTime) by bin(TimeGenerated, 1h)
+```
+
+✅ **SQL Query Test Example (Azure SQL)**
+```sql
+SELECT ServiceName, AVG(ResponseTime) 
+FROM Transactions 
+WHERE ResponseTime > 500 
+GROUP BY ServiceName;
+```
+
+---
+
+### **2.2 Data Model Performance (Import Mode)**
+**Goal:** Optimize **Power BI import performance** when handling **large datasets** from **Azure SQL, Blob Storage, and Data Lake**.
+
+✅ **Testing Steps**  
+1. **Measure dataset load time** for **100K, 500K, 1M records**.  
+2. **Enable compression techniques** using **Power BI aggregations**.  
+3. **Reduce table size** by removing unused columns.  
+4. **Use Power Query Diagnostics** to analyze **query folding behavior**.  
+
+✅ **Optimization Techniques**
+- Use **Parquet instead of CSV** in **Azure Storage** (faster query execution).  
+- Apply **VertiPaq Analyzer** in Power BI to identify **large tables consuming excessive memory**.  
+- **Partition data by date/time** for fast retrieval.  
+
+---
+
+### **2.3 Scheduled Refresh Performance**
+**Goal:** Measure how **Power BI handles scheduled refresh** workloads from **Azure SQL, ServiceNow, and Azure Storage**.
+
+✅ **Testing Steps**
+1. **Set dataset refresh frequency** to **15 minutes, 30 minutes, and 1 hour**.  
+2. **Enable incremental refresh** to reduce refresh times.  
+3. **Monitor refresh duration in Power BI Service**.  
+4. **Identify bottlenecks in Power BI Gateway performance** (if using on-premise data).  
+
+✅ **Optimization Techniques**
+- **Avoid full dataset refreshes**; instead, use **partitioned incremental refresh**.  
+- Use **Azure Data Factory** to pre-aggregate data before Power BI queries it.  
+- Offload **heavy transformation logic to the source database** instead of Power Query.  
+
+✅ **Power BI Incremental Refresh Configuration**
+1. **Enable DateTime Filtering in SQL Query**
+   ```sql
+   SELECT * FROM Transactions WHERE CreatedAt >= @StartDate AND CreatedAt <= @EndDate;
+   ```
+2. **Set Incremental Refresh Policy in Power BI**
+   - Store 2 years of data.  
+   - Refresh **only the last 7 days**.  
+
+---
+
+## **3️⃣ Optimization Techniques for Power BI Performance**
+### **3.1 DirectQuery Optimization**
+✅ **Optimize SQL Indexing**
+   - **Create indexed views** for frequently queried tables.  
+   - Example:
+     ```sql
+     CREATE INDEX idx_latency ON Transactions(ResponseTime);
+     ```
+
+✅ **Push Calculations to Database**
+   - Perform aggregations at the **SQL level instead of Power BI**.
+   - Example:
+     ```sql
+     SELECT ServiceName, AVG(ResponseTime) FROM Transactions GROUP BY ServiceName;
+     ```
+
+✅ **Reduce Data Model Complexity**
+   - Avoid unnecessary relationships between tables.  
+   - Use **denormalized tables** where possible.  
+
+---
+
+### **3.2 Import Mode Optimization**
+✅ **Reduce Dataset Size**
+   - Remove unused columns in Power BI Query Editor.  
+   - Use **aggregated tables instead of detailed raw data**.  
+
+✅ **Enable Data Compression**
+   - **Use Parquet instead of CSV** when reading from **Azure Data Lake**.  
+
+✅ **Optimize DAX Queries**
+   - Use **SUMX instead of SUM** for large table calculations.  
+   - Example:
+     ```DAX
+     TotalResponseTime = SUMX(Transactions, Transactions[ResponseTime])
+     ```
+
+---
+
+### **3.3 Scheduled Refresh Optimization**
+✅ **Enable Power BI Gateway Performance Logging**
+   - If using **on-premises SQL Server**, ensure **Power BI Gateway logs refresh times**.
+
+✅ **Use Power Automate to Control Refresh Timing**
+   - **Trigger refresh** only **when new data is available**.  
+
+✅ **Reduce API Calls for ServiceNow Data**
+   - Fetch **only the latest records**:
+     ```
+     https://your-instance.service-now.com/api/now/table/incident?sys_updated_on>2025-03-01
+     ```
+
+---
+
+## **4️⃣ Performance Benchmarking & Monitoring**
+### **4.1 Monitor Power BI Performance Metrics**
+✅ **Key Performance Metrics to Track**
+| **Metric** | **Description** | **Target Value** |
+|------------|----------------|------------------|
+| **Query Execution Time** | Time taken for DirectQuery execution | **< 2 sec** |
+| **Report Load Time** | Time taken to render a report in Power BI | **< 3 sec** |
+| **Scheduled Refresh Duration** | Time taken to refresh dataset in Power BI Service | **< 5 min** |
+| **Gateway CPU Usage** | Resource consumption during data refresh | **< 50%** |
+| **DAX Query Performance** | Execution time for calculated measures | **< 2 sec** |
+
+✅ **Use Power BI Performance Analyzer**
+1. **Open Power BI Desktop**.
+2. Navigate to **View → Performance Analyzer**.
+3. Click **Start Recording**.
+4. **Analyze slow-loading visuals**.
+
+---
+
+## **5️⃣ Conclusion**
+✅ **Key Takeaways for Power BI Performance Testing**
+- **Use Import Mode for large datasets** (optimize storage & refresh times).  
+- **Optimize DirectQuery with indexed views & query folding**.  
+- **Enable Incremental Refresh to reduce full dataset loads**.  
+- **Use Power BI Performance Analyzer to detect slow queries**.  
+- **Optimize network bandwidth** for large-scale Azure SQL queries.  
+
+🚀 **By following these best practices, Power BI dashboards will load faster, consume fewer resources, and provide real-time insights efficiently!**
 # **Security Considerations for System Health Dashboard (SHD) Logging and Monitoring**  
 
 Ensuring **robust security** in the **System Health Dashboard (SHD)** is critical for **protecting sensitive system logs, preventing unauthorized access, and maintaining compliance** with regulatory standards (e.g., **HIPAA, SOC 2, NIST**). Below are detailed security considerations for **logging, data access, encryption, monitoring, and compliance**.
