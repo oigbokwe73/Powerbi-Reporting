@@ -1,5 +1,80 @@
 # Powerbi-Reporting
 
+### 📊 Summary: SIP Dashboard Candidate Metrics Review
+
+The **Agency** conducted a comprehensive review of **candidate metrics** proposed for the **System Integration Platform (SIP)** dashboard, to be visualized in **Power BI**. The primary objective was to assess which metrics offer the most actionable insights for monitoring, troubleshooting, and optimizing the SIP pipeline, particularly focusing on data ingestion, transformation, delivery, and error handling.
+
+---
+
+### ✅ Metrics Presented for Review
+
+The following key metric categories were presented for dashboard consideration:
+
+#### 1. **File and Record Processing Metrics**
+- **Total Records Received**
+- **Total Records Passed Validation**
+- **Total Records Accepted**
+- **Total Records Failed**
+- **Total Records Delivered**
+- **Total Records Sent to DLQ**
+- **Total Errors Encountered**
+
+#### 2. **Request Performance Metrics**
+- **Total Requests**
+- **Successful vs. Failed Requests**
+- **Failure Rate (%)**
+- **Average Response Time**
+- **Top Error Codes**
+
+#### 3. **System Utilization Metrics**
+- **CPU Usage %**
+- **Memory Usage (MB)**
+- **Disk I/O Read/Write (MBps)**
+- **Network Bandwidth Usage (%)**
+
+#### 4. **Azure Entra-ID & Identity Metrics**
+- **User Creation & Group Events**
+- **Role Assignment Changes**
+- **Identity Protection Risk Detections**
+- **High-Risk Sign-ins**
+- **Directory Changes**
+
+---
+
+### 🧠 Decision Outcome
+
+After reviewing the proposed metrics and associated visual mockups:
+
+- ✅ **Approved for Dashboard Inclusion**:
+  - **End-to-End Record Metrics** (Received, Passed, Accepted, Failed, Delivered, DLQ)
+  - **Request Performance** (Success/Fail, Response Time, Error Codes)
+  - **System Utilization Trends** (CPU, Memory, I/O)
+  - **Azure Identity Events** for security visibility
+
+- ❌ **Deferred for Future Consideration**:
+  - Real-time streaming telemetry (pending infrastructure support)
+  - Low-frequency administrative audit logs (to be reviewed quarterly)
+
+---
+
+### 🔍 Rationale for Selections
+
+- **Operational Relevance**: Metrics selected provide visibility into SIP data flow and delivery reliability.
+- **Actionability**: Highlights areas where failures occur (DLQ, Errors, Failed Records), enabling faster triage.
+- **Performance Optimization**: System metrics support root cause analysis for delays or service degradation.
+- **Security and Compliance**: Entra-ID metrics bring auditability and access oversight into daily operations.
+
+---
+
+### 📌 Next Steps
+
+- Power BI development team to begin implementing approved metrics.
+- Set up scheduled refresh from Azure Monitor, Log Analytics, and DLQ queues.
+- Define alert thresholds for high error rates and DLQ spikes.
+- Review initial dashboard prototype with business and technical stakeholders.
+
+Let me know if you'd like a visual version of this summary in PowerPoint or if you need help building the first Power BI report!
+
 # **Performance Testing: Power BI Connecting to Data Sources**  
 
 ## **Introduction**  
