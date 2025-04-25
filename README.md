@@ -1,5 +1,45 @@
 # Powerbi-Reporting
 
+
+
+In **Power BI**, if you want to show an **aggregated amount (like count, sum, or average)** on a **Card visualization**, you can use a **DAX measure**.
+
+---
+
+### ✅ Example: **Count of Change Requests**
+Let’s say you want to create a **Card** that shows the total number of Change Requests in your dataset.
+
+Here’s the DAX formula for that:
+
+```DAX
+Total Change Requests = 
+CALCULATE(COUNTROWS('ServiceNow Sample Records'), 
+          'ServiceNow Sample Records'[Record_Type] = "Change Request")
+```
+
+Then, add this **measure** to a **Card visual**, and Power BI will display the total number of Change Requests.
+
+---
+
+### 🔁 More Examples:
+
+| **Goal**                          | **DAX Measure** |
+|----------------------------------|------------------|
+| Total Records                    | `Total Records = COUNTROWS('ServiceNow Sample Records')` |
+| Total Closed Records             | `Closed Records = CALCULATE(COUNTROWS('ServiceNow Sample Records'), 'ServiceNow Sample Records'[Status] = "Closed")` |
+| Average Days to Close            | ```Average Close Time = AVERAGEX(FILTER('ServiceNow Sample Records', 'ServiceNow Sample Records'[Closed_At] <> ""), DATEDIFF('ServiceNow Sample Records'[Opened_At], 'ServiceNow Sample Records'[Closed_At], DAY))``` |
+| Open Records                     | `Open Records = CALCULATE(COUNTROWS('ServiceNow Sample Records'), 'ServiceNow Sample Records'[Status] = "Open")` |
+
+---
+
+### 💡 Pro Tips:
+
+- Ensure the **date columns** (`Opened_At`, `Closed_At`) are recognized as **Date/Time** in Power BI.
+- Use `CALCULATE` with filtering logic for targeted aggregations.
+- Use `Card` visual from the Visualizations pane and drag your measure into **Values**.
+
+Would you like help building **a KPI card with dynamic date filtering**, like “Closed in the Last 7 Days”?
+
 ### 📊 Summary: SIP Dashboard Candidate Metrics Review
 
 The **Agency** conducted a comprehensive review of **candidate metrics** proposed for the **System Integration Platform (SIP)** dashboard, to be visualized in **Power BI**. The primary objective was to assess which metrics offer the most actionable insights for monitoring, troubleshooting, and optimizing the SIP pipeline, particularly focusing on data ingestion, transformation, delivery, and error handling.
