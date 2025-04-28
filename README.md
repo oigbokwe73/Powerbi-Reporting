@@ -1,5 +1,150 @@
 # Powerbi-Reporting
 
+
+Got it —  
+Now you want **Aging Buckets** but **grouped by Types** like:
+
+- **Incident**
+- **Problem**
+- **Change Request**
+
+✅ **Meaning:** You want **Aging** + **Type** available together for easy slicing, filtering, charting.
+
+This is very common when building **aging dashboards** in Power BI for ServiceNow, Jira, Salesforce, etc.
+
+---
+
+# 📋 Full Steps to Create Aging by Type
+
+---
+
+## ✅ 1. Create the **Aging Bucket** (Column)
+
+(You already know this part — but slight cleanup for completeness.)
+
+Go to **Modeling ➔ New Column**, and paste:
+
+```DAX
+Aging Bucket = 
+VAR RecordAge = 
+    IF(
+        ISBLANK(ServiceNowRecords[ClosedAt]),
+        DATEDIFF(ServiceNowRecords[OpenedAt], TODAY(), DAY),
+        DATEDIFF(ServiceNowRecords[OpenedAt], ServiceNowRecords[ClosedAt], DAY)
+    )
+RETURN
+    SWITCH(
+        TRUE(),
+        RecordAge <= 7, "0-7 Days",
+        RecordAge <= 14, "8-14 Days",
+        RecordAge <= 30, "15-30 Days",
+        RecordAge > 30, "Over 30 Days",
+        "Unknown"
+    )
+```
+
+---
+
+✅ This defines "aging" for every record.
+
+---
+
+## ✅ 2. Make Sure You Have a **Type Column**  
+In your dataset (sample CSV I made earlier), there’s already a column called:
+
+```plaintext
+RecordType
+```
+
+Values like:
+- Incident
+- Problem
+- Change Request
+
+✅ If you don't have this, you need to create it.  
+(But you **already have it** in `ServiceNowRecords[RecordType]`.)
+
+---
+
+## ✅ 3. Create a New Table for a Matrix or Slicer
+
+You don't *have to*, but if you want it super clean, you can create a new summarized table:
+
+```DAX
+Aging by Type = 
+SUMMARIZE(
+    ServiceNowRecords,
+    ServiceNowRecords[RecordType],
+    ServiceNowRecords[Aging Bucket],
+    "Count of Records", COUNTROWS(ServiceNowRecords)
+)
+```
+
+✅ This new table will give you counts grouped **by RecordType + Aging Bucket**.
+
+---
+
+# 📊 Visualization Ideas
+
+| Visual | Setup |
+|--------|-------|
+| **Matrix Table** | Rows: `RecordType`, Columns: `Aging Bucket`, Values: `Count of Records` |
+| **Stacked Column Chart** | Axis: `Aging Bucket`, Legend: `RecordType`, Values: `Count of Records` |
+| **Slicer** | `RecordType` and/or `Aging Bucket` separately |
+| **Bar Chart** | Axis: `RecordType`, Color by `Aging Bucket` |
+
+---
+
+# 📈 Example Matrix Output
+
+| RecordType      | 0-7 Days | 8-14 Days | 15-30 Days | Over 30 Days |
+|-----------------|----------|-----------|------------|--------------|
+| Incident        | 500      | 300        | 600         | 200          |
+| Problem         | 150      | 200        | 400         | 250          |
+| Change Request  | 100      | 180        | 350         | 150          |
+
+✅ Very clean for management-level dashboards.
+
+---
+
+# 📌 Quick Setup Summary:
+
+| Step | Action |
+|:----:|--------|
+| 1 | Create `Aging Bucket` DAX column |
+| 2 | Make sure `RecordType` exists |
+| 3 | (Optional) Create summarized "Aging by Type" table |
+| 4 | Build Matrix, Bar, or Column Charts |
+| 5 | Use RecordType + Aging Bucket slicers for drilldowns |
+
+---
+
+# 🔥 Bonus Tip
+You can also **sort Aging Buckets** manually:
+- 0-7 Days ➔ sort order 1
+- 8-14 Days ➔ sort order 2
+- etc.
+
+This keeps buckets in **chronological order**, not alphabetical.
+
+---
+
+# 🎯 In short:
+
+You now have Aging **+** Types, can filter both **independently** or **together**.
+
+---
+
+Would you also like me to show an **automated color coding** in your chart, so:
+- 0-7 Days = Green
+- 8-14 Days = Yellow
+- 15-30 Days = Orange
+- Over 30 Days = Red
+(automatically applied!)?
+
+It looks 🔥 for dashboards.  
+Should I show you how to do that too? 🚀
+
 Excellent — you’re asking for **DAX queries** to:
 
 - Calculate the **age** (how long a record was open)
