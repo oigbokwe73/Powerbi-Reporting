@@ -1,5 +1,158 @@
 # Powerbi-Reporting
 
+
+
+Awesome — now you're asking for something a bit more **advanced** but **very powerful**:
+
+You want a **DAX query** (table) that outputs **six categories** for a **clustered column chart**:
+
+| Date | Incident Open | Incident Closed | Problem Open | Problem Closed | Change Request Open | Change Request Closed |
+
+---
+
+# 🎯 Full DAX Table to Generate This
+
+We'll use a DAX `SUMMARIZE` + conditional counting logic.
+
+✅ Here's the full query:
+
+```DAX
+OpenClosedByTypeAndDate = 
+SUMMARIZE(
+    Calendar,
+    Calendar[Date],
+    "Incident Open", CALCULATE(
+        COUNTROWS(ServiceNowRecords),
+        ServiceNowRecords[RecordType] = "Incident",
+        ISBLANK(ServiceNowRecords[ClosedAt]),
+        ServiceNowRecords[OpenedAt] <= Calendar[Date]
+    ),
+    "Incident Closed", CALCULATE(
+        COUNTROWS(ServiceNowRecords),
+        ServiceNowRecords[RecordType] = "Incident",
+        NOT ISBLANK(ServiceNowRecords[ClosedAt]),
+        INT(ServiceNowRecords[ClosedAt]) = Calendar[Date]
+    ),
+    "Problem Open", CALCULATE(
+        COUNTROWS(ServiceNowRecords),
+        ServiceNowRecords[RecordType] = "Problem",
+        ISBLANK(ServiceNowRecords[ClosedAt]),
+        ServiceNowRecords[OpenedAt] <= Calendar[Date]
+    ),
+    "Problem Closed", CALCULATE(
+        COUNTROWS(ServiceNowRecords),
+        ServiceNowRecords[RecordType] = "Problem",
+        NOT ISBLANK(ServiceNowRecords[ClosedAt]),
+        INT(ServiceNowRecords[ClosedAt]) = Calendar[Date]
+    ),
+    "Change Request Open", CALCULATE(
+        COUNTROWS(ServiceNowRecords),
+        ServiceNowRecords[RecordType] = "Change Request",
+        ISBLANK(ServiceNowRecords[ClosedAt]),
+        ServiceNowRecords[OpenedAt] <= Calendar[Date]
+    ),
+    "Change Request Closed", CALCULATE(
+        COUNTROWS(ServiceNowRecords),
+        ServiceNowRecords[RecordType] = "Change Request",
+        NOT ISBLANK(ServiceNowRecords[ClosedAt]),
+        INT(ServiceNowRecords[ClosedAt]) = Calendar[Date]
+    )
+)
+```
+
+---
+
+# 📋 How This DAX Works
+
+| Field                  | Logic |
+|-------------------------|-------|
+| **Incident Open**        | Incident where `ClosedAt IS BLANK` and `OpenedAt <= Date` |
+| **Incident Closed**      | Incident where `ClosedAt = Date` |
+| **Problem Open**         | Problem where `ClosedAt IS BLANK` and `OpenedAt <= Date` |
+| **Problem Closed**       | Problem where `ClosedAt = Date` |
+| **Change Request Open**  | Change Request where `ClosedAt IS BLANK` and `OpenedAt <= Date` |
+| **Change Request Closed**| Change Request where `ClosedAt = Date` |
+
+---
+
+# 📊 How to Visualize (Clustered Column Chart Setup)
+
+| Section | Field |
+|---------|-------|
+| Axis    | `Calendar[Date]` |
+| Values  | `Incident Open`, `Incident Closed`, `Problem Open`, `Problem Closed`, `Change Request Open`, `Change Request Closed` |
+
+✅ You'll get a **clustered column** for each type-status combination, **per day**.
+
+---
+
+# 📈 What the Final Chart Will Show
+
+Each date will have **6 bars**:
+- **Blue**: Incident Open
+- **Light Blue**: Incident Closed
+- **Green**: Problem Open
+- **Light Green**: Problem Closed
+- **Orange**: Change Request Open
+- **Light Orange**: Change Request Closed
+
+✅ Clear, stacked view of trends!
+
+---
+
+# 📌 Important Fine-Tuning Tips
+
+| Tip | Details |
+|-----|---------|
+| Use **Continuous X-axis** | So dates flow naturally |
+| Filter **Last 30 Days** | Otherwise chart will be too crowded |
+| Use Distinct Colors | Helps visually separate types |
+| Use Tooltips | To display record counts when hovering over bars |
+
+---
+
+# 🔥 Bonus: If you want **faster performance**,  
+Instead of doing everything inside `SUMMARIZE`, you could **prebuild individual measures** like:
+
+```DAX
+Incident Open = 
+CALCULATE(
+    COUNTROWS(ServiceNowRecords),
+    ServiceNowRecords[RecordType] = "Incident",
+    ISBLANK(ServiceNowRecords[ClosedAt])
+)
+
+Incident Closed = 
+CALCULATE(
+    COUNTROWS(ServiceNowRecords),
+    ServiceNowRecords[RecordType] = "Incident",
+    NOT ISBLANK(ServiceNowRecords[ClosedAt])
+)
+```
+(and similar for others)
+
+Then build your table using these prebuilt measures — faster for large datasets (>100K records).
+
+---
+
+# 🎯 Quick Recap:
+
+| Step | Action |
+|:----:|--------|
+| 1 | Create `OpenClosedByTypeAndDate` DAX Table |
+| 2 | Set Axis = `Calendar[Date]` |
+| 3 | Set Values = all six columns |
+| 4 | Format Chart: Continuous Date Axis, Proper Colors |
+| 5 | Apply Relative Date Filter (Last 30 Days, 90 Days, etc.) |
+
+---
+
+Would you also like me to show a second version where:
+- **Opened** = Cumulative number of tickets open
+- **Closed** = Cumulative closed over time
+👉 (Looks like a **Running Total Aging Chart**) — even more powerful for executive dashboards!  
+Want me to show you that too? 🚀
+
 Absolutely — here's how to write a **DAX query** that aggregates **Open and Closed records by Date** along with their **counts**. This is super useful for visualizing **daily trends** in Power BI (e.g., line chart, bar chart, or matrix showing how many items were opened or closed per day).
 
 ---
