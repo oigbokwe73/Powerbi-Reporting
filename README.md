@@ -1,5 +1,131 @@
 # Powerbi-Reporting
 
+Absolutely — here's how to write a **DAX query** that aggregates **Open and Closed records by Date** along with their **counts**. This is super useful for visualizing **daily trends** in Power BI (e.g., line chart, bar chart, or matrix showing how many items were opened or closed per day).
+
+---
+
+# 🎯 Objective
+
+You want a DAX query that returns something like:
+
+| Date       | Opened Count | Closed Count |
+|------------|--------------|--------------|
+| 2025-04-01 |  85          |  60          |
+| 2025-04-02 |  75          |  70          |
+| 2025-04-03 |  60          |  90          |
+
+---
+
+# ✅ 1. Prerequisites
+- Your table: `ServiceNowRecords`
+- You have `OpenedAt` and `ClosedAt` columns in datetime format
+- You have a `Calendar` table: `Calendar[Date]`
+
+---
+
+# ✅ 2. Create Measures for Aggregation
+
+### 🔹 Measure 1: **Opened Count by Date**
+
+```DAX
+Opened Count = 
+CALCULATE(
+    COUNTROWS(ServiceNowRecords),
+    FILTER(
+        ServiceNowRecords,
+        NOT ISBLANK(ServiceNowRecords[OpenedAt]) &&
+        INT(ServiceNowRecords[OpenedAt]) = SELECTEDVALUE(Calendar[Date])
+    )
+)
+```
+
+---
+
+### 🔹 Measure 2: **Closed Count by Date**
+
+```DAX
+Closed Count = 
+CALCULATE(
+    COUNTROWS(ServiceNowRecords),
+    FILTER(
+        ServiceNowRecords,
+        NOT ISBLANK(ServiceNowRecords[ClosedAt]) &&
+        INT(ServiceNowRecords[ClosedAt]) = SELECTEDVALUE(Calendar[Date])
+    )
+)
+```
+
+---
+
+🔍 Explanation:
+- `INT(datetime)` converts datetime to just the date (removes time)
+- `SELECTEDVALUE(Calendar[Date])` gives the date currently being evaluated on the X-axis
+
+---
+
+# ✅ 3. Visualize It
+
+## ➤ Use a Matrix or Line Chart
+
+| Visual     | Fields                            |
+|------------|-----------------------------------|
+| Matrix     | Rows: `Calendar[Date]` <br> Values: `Opened Count`, `Closed Count` |
+| Line Chart | X-axis: `Calendar[Date]` <br> Y-axis: `Opened Count`, `Closed Count` |
+
+✅ This will let you **compare daily volumes** of records being opened vs closed.
+
+---
+
+# 🔁 Optional: Rolling Date Filter
+
+To focus on just the **last 30 days**:
+
+- Add a **Relative Date filter** on `Calendar[Date]`
+- Choose: `is in the last 30 days`
+
+---
+
+# 📈 Bonus: Dynamic Table (Not Measures)
+
+If you prefer a **table visual from a DAX table expression**, you can create this with `SUMMARIZE`:
+
+```DAX
+OpenClosedByDate = 
+SUMMARIZE(
+    Calendar,
+    Calendar[Date],
+    "Opened Count", CALCULATE(COUNTROWS(ServiceNowRecords), 
+        FILTER(ServiceNowRecords, 
+            INT(ServiceNowRecords[OpenedAt]) = Calendar[Date]
+        )
+    ),
+    "Closed Count", CALCULATE(COUNTROWS(ServiceNowRecords), 
+        FILTER(ServiceNowRecords, 
+            INT(ServiceNowRecords[ClosedAt]) = Calendar[Date]
+        )
+    )
+)
+```
+
+You can view this in **Table view** or use **DAX Studio** to inspect it.
+
+---
+
+# 📌 Summary
+
+| What You Built | How |
+|----------------|-----|
+| Daily count of records opened | `Opened Count` measure |
+| Daily count of records closed | `Closed Count` measure |
+| Visual trend line | Use Calendar[Date] as axis |
+| Clean aggregation logic | `INT(datetime) = Date` for precision |
+| Optional table | `SUMMARIZE` with 2 measures |
+
+---
+
+Would you also like a **stacked column chart** DAX setup where open and close counts are vertically stacked for daily volumes?  
+It’s awesome for **volume heatmaps over time**. Want that too?
+
 
 Got it —  
 Now you want **Aging Buckets** but **grouped by Types** like:
