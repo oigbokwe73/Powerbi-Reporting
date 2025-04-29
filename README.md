@@ -1,5 +1,102 @@
 # Powerbi-Reporting
 
+Absolutely — here’s a **rewritten DAX query** that does **not** use a separate `Calendar` table. Instead, it directly aggregates **open and closed counts by date** using **only the `ServiceNowRecords` table**, across all 6 categories:
+
+---
+
+# 📋 Rewritten DAX Query Without Using a Calendar Table
+
+```DAX
+OpenClosedByTypeAndDate =
+UNION(
+    SELECTCOLUMNS(
+        FILTER(ServiceNowRecords, NOT ISBLANK(ServiceNowRecords[OpenedAt]) && ISBLANK(ServiceNowRecords[ClosedAt])),
+        "Date", INT(ServiceNowRecords[OpenedAt]),
+        "TypeStatus", "Incident Open",
+        "Count", IF(ServiceNowRecords[RecordType] = "Incident", 1, BLANK())
+    ),
+    SELECTCOLUMNS(
+        FILTER(ServiceNowRecords, NOT ISBLANK(ServiceNowRecords[ClosedAt])),
+        "Date", INT(ServiceNowRecords[ClosedAt]),
+        "TypeStatus", "Incident Closed",
+        "Count", IF(ServiceNowRecords[RecordType] = "Incident", 1, BLANK())
+    ),
+    SELECTCOLUMNS(
+        FILTER(ServiceNowRecords, NOT ISBLANK(ServiceNowRecords[OpenedAt]) && ISBLANK(ServiceNowRecords[ClosedAt])),
+        "Date", INT(ServiceNowRecords[OpenedAt]),
+        "TypeStatus", "Problem Open",
+        "Count", IF(ServiceNowRecords[RecordType] = "Problem", 1, BLANK())
+    ),
+    SELECTCOLUMNS(
+        FILTER(ServiceNowRecords, NOT ISBLANK(ServiceNowRecords[ClosedAt])),
+        "Date", INT(ServiceNowRecords[ClosedAt]),
+        "TypeStatus", "Problem Closed",
+        "Count", IF(ServiceNowRecords[RecordType] = "Problem", 1, BLANK())
+    ),
+    SELECTCOLUMNS(
+        FILTER(ServiceNowRecords, NOT ISBLANK(ServiceNowRecords[OpenedAt]) && ISBLANK(ServiceNowRecords[ClosedAt])),
+        "Date", INT(ServiceNowRecords[OpenedAt]),
+        "TypeStatus", "Change Request Open",
+        "Count", IF(ServiceNowRecords[RecordType] = "Change Request", 1, BLANK())
+    ),
+    SELECTCOLUMNS(
+        FILTER(ServiceNowRecords, NOT ISBLANK(ServiceNowRecords[ClosedAt])),
+        "Date", INT(ServiceNowRecords[ClosedAt]),
+        "TypeStatus", "Change Request Closed",
+        "Count", IF(ServiceNowRecords[RecordType] = "Change Request", 1, BLANK())
+    )
+)
+```
+
+---
+
+# 📈 What This Returns
+
+A **flat table** with:
+- `Date`: Either OpenedAt or ClosedAt (converted to date only)
+- `TypeStatus`: One of the six categories
+- `Count`: Value `1` or `BLANK`, for aggregation
+
+---
+
+### 📊 Example Output
+
+| Date       | TypeStatus             | Count |
+|------------|------------------------|-------|
+| 2025-04-01 | Incident Open          | 1     |
+| 2025-04-01 | Incident Open          | 1     |
+| 2025-04-01 | Incident Closed        | 1     |
+| 2025-04-02 | Problem Open           | 1     |
+| 2025-04-03 | Change Request Closed  | 1     |
+
+> 🎯 You can then aggregate this using `SUM(Count)` grouped by `Date` and `TypeStatus` in Power BI.
+
+---
+
+# 🧭 How to Use in Power BI
+
+### ➤ Visualization: Clustered Column Chart
+
+| Field     | Set as   |
+|-----------|----------|
+| `Date`    | X-axis   |
+| `TypeStatus` | Legend   |
+| `Count`   | Value (aggregated as SUM) |
+
+✅ You'll get **grouped columns** per date, color-coded by type-status.
+
+---
+
+# 🔥 Optional Improvements
+
+- Use `DATEDIFF(TODAY(), OpenedAt)` to filter for last 30 days.
+- Use slicers on `TypeStatus` to filter just open or closed records.
+- Convert `INT(datetime)` to `FORMAT(..., "yyyy-MM-dd")` if you want string dates.
+
+---
+
+Would you like me to also return this DAX as a **physical table** for use in Power BI visuals — or do you prefer it kept as a virtual dataset using `SUMMARIZE` or measures?
+
 
 
 Awesome — now you're asking for something a bit more **advanced** but **very powerful**:
