@@ -1,6 +1,131 @@
 # Powerbi-Reporting
 
+Here are the **detailed step-by-step instructions to connect Power BI to ServiceNow** using the **ServiceNow REST API**, so you can import and report on data like Incidents, Changes, and Problems.
 
+---
+
+## ✅ Overview
+
+Power BI does **not have a built-in ServiceNow connector**. So we use:
+
+- **Option 1 (Recommended):** REST API via **Power Query Web connector**
+- **Option 2:** Use **Power BI Dataflow with ADF/Logic Apps** to stage data in Azure SQL or ADLS
+
+---
+
+## 🔷 Option 1: Direct Connection using REST API in Power BI Desktop
+
+### 🔧 Step-by-Step Instructions
+
+#### 🔹 Step 1: Get API Access from ServiceNow
+
+1. Log into **ServiceNow** (admin required).
+2. Go to **System Web Services → REST API Explorer**.
+3. Choose the table, e.g., `incident`, `problem`, `change_request`.
+4. Copy the REST API URL, e.g.:
+   ```
+   https://<instance>.service-now.com/api/now/table/incident
+   ```
+5. Ensure your **ServiceNow user** has **REST API access** (e.g., `rest_api_explorer`, `itil`, or custom role).
+
+---
+
+#### 🔹 Step 2: Open Power BI Desktop
+
+1. Click **Home → Get Data → Web**
+2. In the URL box, enter:
+   ```
+   https://<instance>.service-now.com/api/now/table/incident?sysparm_limit=1000
+   ```
+   (You can adjust `sysparm_query`, `sysparm_fields`, etc.)
+
+3. Click **Advanced** to configure headers:
+   - **HTTP Method**: `GET`
+   - **Header**: Add:
+     - `Accept`: `application/json`
+
+4. Click **OK**
+
+---
+
+#### 🔹 Step 3: Authenticate
+
+- When prompted, choose:
+  - **Basic Authentication**
+    - Username: your SNOW username
+    - Password: your password or **OAuth Token**
+- Click **Connect**
+
+⚠️ For security, use **OAuth 2.0** if your instance is configured with it.
+
+---
+
+#### 🔹 Step 4: Transform JSON Response
+
+1. The response will show as a record called `"result"`.
+2. Click on the `List` under `result`.
+3. Click **To Table**.
+4. Expand all columns using the icon at the top of the column header.
+5. Transform, filter, and shape the data as needed using Power Query.
+
+---
+
+#### 🔹 Step 5: Load Data
+
+1. Click **Close & Apply** to load data into the Power BI model.
+2. Build reports using incident status, category, timestamps, etc.
+
+---
+
+## 📄 Example ServiceNow API Query
+
+```url
+https://<instance>.service-now.com/api/now/table/incident?sysparm_limit=1000&sysparm_fields=number,short_description,category,state,opened_at,closed_at
+```
+
+You can also filter:
+```url
+...&sysparm_query=opened_at>=javascript:gs.daysAgoStart(30)^state!=7
+```
+
+---
+
+## 🔁 Schedule Refresh
+
+If hosted in **Power BI Service**, you must:
+
+- Use an **on-premises data gateway** for basic auth
+- Or stage ServiceNow data via Azure SQL or ADLS (using Azure Data Factory)
+
+---
+
+## 🔧 Option 2: Stage ServiceNow data in Azure before Power BI
+
+| Component           | Purpose                                           |
+|----------------------|---------------------------------------------------|
+| **Azure Data Factory** | Calls ServiceNow API on a schedule               |
+| **Azure SQL / ADLS**   | Stores normalized, cleansed data                 |
+| **Power BI Dataset**   | Connects directly to the data model              |
+
+✅ More scalable, secure, and performant for large data.
+
+---
+
+## 🔐 Best Practices
+
+| Area                | Best Practice                                    |
+|---------------------|--------------------------------------------------|
+| **Security**         | Use **OAuth2** over Basic Auth                  |
+| **Pagination**       | SNOW API defaults to 100; use `sysparm_offset`  |
+| **Data Model**       | Normalize reference fields (e.g., `assignment_group`) using joins |
+| **API Limits**       | SNOW REST API may throttle if high volume       |
+| **Refresh**          | Use Dataflows or ADF for frequent updates       |
+
+---
+
+Would you like:
+- A **Power BI sample M query (Power Query code)**?
+- Or a **solution using Azure Data Factory to stage ServiceNow data** into Azure SQL or ADLS?
 
 Here are the **Power BI step-by-step instructions to import data from an Azure Storage Account**, covering **Blob Storage** and **Data Lake Gen2**, as they are the most common options:
 
