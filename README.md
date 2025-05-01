@@ -1,5 +1,110 @@
 # Powerbi-Reporting
 
+
+Here are the **step-by-step instructions** to **import data from Azure Log Analytics Workspace into Power BI** using the **Azure Monitor connector**:
+
+---
+
+## ✅ Prerequisites
+
+Before starting, make sure:
+
+1. You have **read access** to the Azure Log Analytics Workspace.
+2. You have a **Kusto (KQL)** query ready or know which table (e.g., `Heartbeat`, `Perf`, `AzureDiagnostics`) you want to query.
+3. You have **Power BI Desktop** installed.
+
+---
+
+## 🔽 Step-by-Step: Import Data from Azure Log Analytics Workspace
+
+---
+
+### 🔹 Step 1: Open Power BI Desktop
+
+- Launch **Power BI Desktop**.
+- On the **Home tab**, click **Get Data**.
+
+---
+
+### 🔹 Step 2: Select Azure Monitor
+
+- In the **Get Data** window, go to:
+  - **Azure** > Select **Azure Monitor**
+  - Click **Connect**
+
+---
+
+### 🔹 Step 3: Sign In to Azure
+
+- Sign in using your **Azure credentials** (same account with access to Log Analytics).
+- Allow Power BI to authenticate and list available subscriptions and resources.
+
+---
+
+### 🔹 Step 4: Choose the Resource and Workspace
+
+- After sign-in, a navigator window will appear.
+- You’ll be prompted to select:
+  - **Subscription**
+  - **Resource Group**
+  - **Log Analytics Workspace**
+
+Select the appropriate workspace.
+
+---
+
+### 🔹 Step 5: Enter or Paste a KQL Query
+
+You will now see a query window where you can **write or paste your Kusto query**. Example:
+
+```kusto
+Heartbeat
+| summarize Heartbeats=count() by bin(TimeGenerated, 1h), Computer
+| order by TimeGenerated desc
+```
+
+Click **Run** to preview the data.
+
+---
+
+### 🔹 Step 6: Load or Transform Data
+
+- Click **Transform Data** to open the Power Query Editor if you want to shape the data.
+- Or click **Load** to import directly into your Power BI model.
+
+---
+
+### 🔹 Step 7: Model and Visualize
+
+- Once the data is loaded, go to **Model View** if you want to create relationships.
+- Use **Visualizations pane** to build charts, KPIs, or dashboards.
+
+---
+
+### 🔹 Step 8: Schedule Refresh (Power BI Service)
+
+If publishing to Power BI Service:
+1. Publish the report.
+2. Go to **Dataset Settings** in Power BI Service.
+3. Under **Scheduled Refresh**, configure a refresh schedule.
+4. Use **OAuth2 authentication** for secure connection reuse.
+
+---
+
+## 📝 Tips & Notes
+
+| Tip                                      | Description                                                                 |
+|------------------------------------------|-----------------------------------------------------------------------------|
+| **Tables to Know**                       | `Heartbeat`, `Perf`, `InsightsMetrics`, `AzureDiagnostics`, `SigninLogs`   |
+| **Performance**                          | Filter early using `where TimeGenerated > ago(7d)` to limit data volume    |
+| **Date/Time**                            | Use `bin()` to group by time intervals (1h, 1d, etc.)                       |
+| **Security**                             | Use **Azure Role-Based Access Control (RBAC)** to manage access            |
+| **Refresh Limitations**                  | Power BI Service limits query duration to 10 minutes                       |
+
+---
+
+Would you like me to provide some **sample KQL queries** for common use cases like uptime, CPU usage, or failed sign-ins?
+
 Absolutely — here’s a **rewritten DAX query** that does **not** use a separate `Calendar` table. Instead, it directly aggregates **open and closed counts by date** using **only the `ServiceNowRecords` table**, across all 6 categories:
 
 ---
