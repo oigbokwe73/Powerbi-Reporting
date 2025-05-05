@@ -1,5 +1,48 @@
 # Powerbi-Reporting
 
+Here’s a **Power BI DAX measure** to count the number of **Critical Change Requests that were closed within 7 days** from their opening date:
+
+---
+
+### ✅ DAX Measure: `CriticalCRs_ClosedIn7Days`
+
+```dax
+CriticalCRs_ClosedIn7Days = 
+CALCULATE(
+    COUNTROWS('Requests'),
+    FILTER(
+        'Requests',
+        LOWER('Requests'[Priority]) = "critical" &&
+        LOWER('Requests'[Type]) = "change request" &&
+        NOT(ISBLANK('Requests'[OpenedAt])) &&
+        NOT(ISBLANK('Requests'[ClosedAt])) &&
+        DATEDIFF('Requests'[OpenedAt], 'Requests'[ClosedAt], DAY) <= 7
+    )
+)
+```
+
+---
+
+### 📌 Explanation
+
+| Logic                            | Purpose                                      |
+| -------------------------------- | -------------------------------------------- |
+| `LOWER(Priority) = "critical"`   | Filters only critical priority records       |
+| `LOWER(Type) = "change request"` | Ensures it is a Change Request               |
+| `OpenedAt`, `ClosedAt` checks    | Ensures both dates exist                     |
+| `DATEDIFF(...) <= 7`             | Captures only those closed in 7 days or less |
+
+---
+
+### ✅ Visualization Ideas
+
+* KPI Card: "Critical Change Requests Closed in ≤ 7 Days"
+* Column chart: Trend over time (use `ClosedAt` date axis)
+* Matrix: Count by `Assignment Group` or `Category`
+
+---
+
+Would you like a second measure for **those closed after 7 days** for SLA breach tracking?
 
 
 Here’s the **updated Power BI DAX measure** that calculates the **average age in days** for records that are both:
