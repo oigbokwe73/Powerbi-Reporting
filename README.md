@@ -1,5 +1,50 @@
 # Powerbi-Reporting
 
+Here’s a **Power BI DAX measure** to **count the number of Critical Change Requests** that were **closed within 7 days** from when they were opened.
+
+---
+
+### ✅ Measure: `CriticalCRs_ClosedWithin7Days`
+
+```dax
+CriticalCRs_ClosedWithin7Days = 
+CALCULATE(
+    COUNTROWS('Requests'),
+    FILTER(
+        'Requests',
+        LOWER('Requests'[Priority]) = "critical"
+            && LOWER('Requests'[Type]) = "change request"
+            && NOT(ISBLANK('Requests'[OpenedAt]))
+            && NOT(ISBLANK('Requests'[ClosedAt]))
+            && DATEDIFF('Requests'[OpenedAt], 'Requests'[ClosedAt], DAY) <= 7
+    )
+)
+```
+
+---
+
+### 🧾 Explanation
+
+| Logic Component                   | Purpose                                                            |
+| --------------------------------- | ------------------------------------------------------------------ |
+| `LOWER(Priority) = "critical"`    | Filters for Critical priority (case-insensitive)                   |
+| `LOWER(Type) = "change request"`  | Filters for records marked as Change Requests                      |
+| `NOT(ISBLANK(OpenedAt/ClosedAt))` | Ensures both timestamps exist (i.e., the CR was opened and closed) |
+| `DATEDIFF(...) <= 7`              | Ensures the CR was closed within 7 days of being opened            |
+| `COUNTROWS()`                     | Counts how many such records match the filter                      |
+
+---
+
+### 📊 Recommended Usage
+
+* Display as a **KPI Card**: “# Critical CRs Closed ≤ 7 Days”
+* Compare with total critical CRs in a **Donut Chart** or **Bar Chart** by `Assignment Group` or `Change Category`.
+
+---
+
+Would you like a companion measure for **Critical CRs NOT closed within 7 days** (e.g., SLA breaches)?
+
+
 Here’s a **Power BI DAX measure** to count the number of **Critical Change Requests that were closed within 7 days** from their opening date:
 
 ---
