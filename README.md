@@ -2,9 +2,88 @@
 
 
 
-{
-        "UserID": "7cc42b44-bc7d-403b-a178-7bd8fc17151c"
-}
+Here’s the **updated Power BI DAX measure** that calculates the **average age in days** for records that are both:
+
+* **Type = "Change Request"**
+* **Priority = "Critical"**
+
+This assumes you have columns like `Type`, `Priority`, `OpenedAt`, and optionally `ClosedAt`.
+
+---
+
+### ✅ Updated DAX Measure: `AvgAgeDays_Critical_ChangeRequest`
+
+```dax
+AvgAgeDays_Critical_ChangeRequest = 
+CALCULATE(
+    AVERAGEX(
+        FILTER(
+            'Requests',
+            LOWER('Requests'[Priority]) = "critical"
+                && LOWER('Requests'[Type]) = "change request"
+                && NOT(ISBLANK('Requests'[OpenedAt]))
+                && ISBLANK('Requests'[ClosedAt])  -- Only open items
+        ),
+        DATEDIFF('Requests'[OpenedAt], TODAY(), DAY)
+    )
+)
+```
+
+---
+
+### 📌 What It Does
+
+| Condition            | Description                                     |
+| -------------------- | ----------------------------------------------- |
+| `LOWER(Priority)`    | Ensures case-insensitive comparison             |
+| `LOWER(Type)`        | Filters only Change Requests                    |
+| `OpenedAt not blank` | Ensures data integrity                          |
+| `ClosedAt is blank`  | Focuses on **open** Change Requests only        |
+| `DATEDIFF()`         | Calculates age in days from `OpenedAt` to today |
+
+---
+
+### 🔄 Optional Variants
+
+* For **maximum age** instead of average:
+
+```dax
+MaxAgeDays_Critical_ChangeRequest =
+CALCULATE(
+    MAXX(
+        FILTER(
+            'Requests',
+            LOWER('Requests'[Priority]) = "critical"
+                && LOWER('Requests'[Type]) = "change request"
+                && NOT(ISBLANK('Requests'[OpenedAt]))
+                && ISBLANK('Requests'[ClosedAt])
+        ),
+        DATEDIFF('Requests'[OpenedAt], TODAY(), DAY)
+    )
+)
+```
+
+* To **count** Critical Change Requests older than 10 days:
+
+```dax
+CriticalCRs_Over10Days = 
+CALCULATE(
+    COUNTROWS('Requests'),
+    FILTER(
+        'Requests',
+        LOWER('Requests'[Priority]) = "critical"
+            && LOWER('Requests'[Type]) = "change request"
+            && NOT(ISBLANK('Requests'[OpenedAt]))
+            && ISBLANK('Requests'[ClosedAt])
+            && DATEDIFF('Requests'[OpenedAt], TODAY(), DAY) > 10
+    )
+)
+```
+
+---
+
+Would you like to **display this in a Power BI card or matrix with conditional formatting** for age buckets?
+
 
 Here are the **detailed step-by-step instructions to connect Power BI to ServiceNow** using the **ServiceNow REST API**, so you can import and report on data like Incidents, Changes, and Problems.
 
