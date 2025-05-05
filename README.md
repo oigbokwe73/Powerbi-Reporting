@@ -89,7 +89,6 @@ RETURN
 
 ---
 
-Would you like this version extended to include **non-critical change requests** or grouped by **Assignment Group** for team-specific burndown?
 
 
 Here’s a **Power BI DAX measure** to **count the number of Critical Change Requests** that were **closed within 7 days** from when they were opened.
@@ -384,9 +383,6 @@ If hosted in **Power BI Service**, you must:
 
 ---
 
-Would you like:
-- A **Power BI sample M query (Power Query code)**?
-- Or a **solution using Azure Data Factory to stage ServiceNow data** into Azure SQL or ADLS?
 
 Here are the **Power BI step-by-step instructions to import data from an Azure Storage Account**, covering **Blob Storage** and **Data Lake Gen2**, as they are the most common options:
 
@@ -458,8 +454,6 @@ Here are the **Power BI step-by-step instructions to import data from an Azure S
 - Assign RBAC roles like **Storage Blob Data Reader** to Power BI.
 
 ---
-
-Would you like steps to **automate refresh** or connect through **Azure Synapse** or **ADF staging layer** for large-scale ingestion?
 
 
 Here are the **step-by-step instructions** to **import data from Azure Log Analytics Workspace into Power BI** using the **Azure Monitor connector**:
@@ -564,7 +558,6 @@ If publishing to Power BI Service:
 
 ---
 
-Would you like me to provide some **sample KQL queries** for common use cases like uptime, CPU usage, or failed sign-ins?
 
 Absolutely — here’s a **rewritten DAX query** that does **not** use a separate `Calendar` table. Instead, it directly aggregates **open and closed counts by date** using **only the `ServiceNowRecords` table**, across all 6 categories:
 
@@ -661,7 +654,6 @@ A **flat table** with:
 
 ---
 
-Would you like me to also return this DAX as a **physical table** for use in Power BI visuals — or do you prefer it kept as a virtual dataset using `SUMMARIZE` or measures?
 
 
 
@@ -810,13 +802,7 @@ Then build your table using these prebuilt measures — faster for large dataset
 
 ---
 
-Would you also like me to show a second version where:
-- **Opened** = Cumulative number of tickets open
-- **Closed** = Cumulative closed over time
-👉 (Looks like a **Running Total Aging Chart**) — even more powerful for executive dashboards!  
-Want me to show you that too? 🚀
-
-Absolutely — here's how to write a **DAX query** that aggregates **Open and Closed records by Date** along with their **counts**. This is super useful for visualizing **daily trends** in Power BI (e.g., line chart, bar chart, or matrix showing how many items were opened or closed per day).
+**DAX query** that aggregates **Open and Closed records by Date** along with their **counts**. This is super useful for visualizing **daily trends** in Power BI (e.g., line chart, bar chart, or matrix showing how many items were opened or closed per day).
 
 ---
 
@@ -939,11 +925,7 @@ You can view this in **Table view** or use **DAX Studio** to inspect it.
 
 ---
 
-Would you also like a **stacked column chart** DAX setup where open and close counts are vertically stacked for daily volumes?  
-It’s awesome for **volume heatmaps over time**. Want that too?
 
-
-Got it —  
 Now you want **Aging Buckets** but **grouped by Types** like:
 
 - **Incident**
@@ -1316,11 +1298,6 @@ Want me to show you that too? 🎯
 | Line Chart | Calendar[Date] on Axis, Average Age (Open) and Average Age (Closed) as Lines |
 
 ---
-
-Would you like me to also show a DAX query to calculate **aging buckets**?  
-(for example: "0-7 days", "8-14 days", "15-30 days", "Over 30 days"?)  
-👉 That’s great if you want a **bar chart** showing how many incidents are getting old! 🚀  
-Would you like that?
 
 Perfect — let’s extend it clearly for a **time series visualization** showing **Open vs Closed trends** over the last 30 days!
 
