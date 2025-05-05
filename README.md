@@ -1,5 +1,97 @@
 # Powerbi-Reporting
 
+Here’s a **DAX query that creates a summary table** for **Critical Change Requests** showing:
+
+* **Opened count per day**
+* **Closed count per day**
+* **Running total of open requests (burn down)**
+
+This table can be used to build a **burndown chart** in Power BI.
+
+---
+
+### ✅ DAX Table: `ChangeRequestBurnDown`
+
+```dax
+ChangeRequestBurnDown = 
+VAR CriticalCRs =
+    FILTER (
+        'Requests',
+        LOWER ( 'Requests'[Priority] ) = "critical"
+            && LOWER ( 'Requests'[Type] ) = "change request"
+    )
+
+VAR OpenedTable =
+    SUMMARIZE (
+        CriticalCRs,
+        'Requests'[OpenedAt],
+        "Date", DATEVALUE('Requests'[OpenedAt]),
+        "OpenedCount", COUNTROWS ( FILTER ( CriticalCRs, 'Requests'[OpenedAt] = EARLIER('Requests'[OpenedAt]) ) )
+    )
+
+VAR ClosedTable =
+    SUMMARIZE (
+        CriticalCRs,
+        'Requests'[ClosedAt],
+        "Date", DATEVALUE('Requests'[ClosedAt]),
+        "ClosedCount", COUNTROWS ( FILTER ( CriticalCRs, 'Requests'[ClosedAt] = EARLIER('Requests'[ClosedAt]) ) )
+    )
+
+VAR Unioned =
+    UNION (
+        SELECTCOLUMNS ( OpenedTable, "Date", [Date], "OpenedCount", [OpenedCount], "ClosedCount", BLANK () ),
+        SELECTCOLUMNS ( ClosedTable, "Date", [Date], "OpenedCount", BLANK (), "ClosedCount", [ClosedCount] )
+    )
+
+VAR Aggregated =
+    SUMMARIZE (
+        Unioned,
+        [Date],
+        "OpenedCount", SUM ( Unioned[OpenedCount] ),
+        "ClosedCount", SUM ( Unioned[ClosedCount] )
+    )
+
+VAR SortedTable =
+    ADDCOLUMNS (
+        Aggregated,
+        "OpenRunningTotal",
+        CALCULATE (
+            SUM ( [OpenedCount] ) - SUM ( [ClosedCount] ),
+            FILTER ( Aggregated, [Date] <= EARLIER ( [Date] ) )
+        )
+    )
+
+RETURN
+    SortedTable
+```
+
+---
+
+### 🧾 Output Table Fields
+
+| Column Name        | Description                                           |
+| ------------------ | ----------------------------------------------------- |
+| `Date`             | Calendar date (from OpenedAt and ClosedAt)            |
+| `OpenedCount`      | Number of Critical Change Requests opened on that day |
+| `ClosedCount`      | Number of Critical Change Requests closed on that day |
+| `OpenRunningTotal` | Remaining open Critical Change Requests on each day   |
+
+---
+
+### 📊 Visual Suggestion (Burn Down Chart)
+
+* **X-axis**: `Date`
+* **Y-axis**:
+
+  * Line: `OpenRunningTotal`
+  * Columns: `OpenedCount` and `ClosedCount`
+* Use a **Line and Clustered Column Chart** in Power BI
+
+---
+
+Would you like this version extended to include **non-critical change requests** or grouped by **Assignment Group** for team-specific burndown?
+
+
 Here’s a **Power BI DAX measure** to **count the number of Critical Change Requests** that were **closed within 7 days** from when they were opened.
 
 ---
@@ -42,7 +134,6 @@ CALCULATE(
 
 ---
 
-Would you like a companion measure for **Critical CRs NOT closed within 7 days** (e.g., SLA breaches)?
 
 
 Here’s a **Power BI DAX measure** to count the number of **Critical Change Requests that were closed within 7 days** from their opening date:
@@ -87,7 +178,6 @@ CALCULATE(
 
 ---
 
-Would you like a second measure for **those closed after 7 days** for SLA breach tracking?
 
 
 Here’s the **updated Power BI DAX measure** that calculates the **average age in days** for records that are both:
@@ -169,8 +259,6 @@ CALCULATE(
 ```
 
 ---
-
-Would you like to **display this in a Power BI card or matrix with conditional formatting** for age buckets?
 
 
 Here are the **detailed step-by-step instructions to connect Power BI to ServiceNow** using the **ServiceNow REST API**, so you can import and report on data like Incidents, Changes, and Problems.
