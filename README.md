@@ -1,5 +1,11 @@
 # Powerbi-Reporting
 
+
+
+{
+        "UserID": "7cc42b44-bc7d-403b-a178-7bd8fc17151c"
+}
+
 Here are the **detailed step-by-step instructions to connect Power BI to ServiceNow** using the **ServiceNow REST API**, so you can import and report on data like Incidents, Changes, and Problems.
 
 ---
