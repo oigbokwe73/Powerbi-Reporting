@@ -1,5 +1,93 @@
 # Powerbi-Reporting
 
+
+Here’s a **Cumulative DAX Query Table** to calculate a **running total of Critical Change Requests** over time — both **opened** and **closed** — using the `OpenedAt` and `ClosedAt` dates. This is perfect for creating **burnup or burndown charts** in Power BI.
+
+---
+
+## ✅ DAX Calculated Table: `CumulativeCriticalChangeRequests`
+
+```dax
+CumulativeCriticalChangeRequests =
+VAR CriticalCRs =
+    FILTER (
+        'Requests',
+        LOWER ( 'Requests'[Priority] ) = "critical"
+            && LOWER ( 'Requests'[Type] ) = "change request"
+            && NOT ( ISBLANK ( 'Requests'[OpenedAt] ) )
+    )
+
+VAR AllDates =
+    ADDCOLUMNS (
+        CALENDAR (
+            MINX ( CriticalCRs, 'Requests'[OpenedAt] ),
+            MAXX ( CriticalCRs, TODAY() )
+        ),
+        "Date", [Date]
+    )
+
+RETURN
+    ADDCOLUMNS (
+        AllDates,
+        "CumulativeOpened",
+            CALCULATE (
+                COUNTROWS ( CriticalCRs ),
+                FILTER (
+                    CriticalCRs,
+                    'Requests'[OpenedAt] <= [Date]
+                )
+            ),
+        "CumulativeClosed",
+            CALCULATE (
+                COUNTROWS ( CriticalCRs ),
+                FILTER (
+                    CriticalCRs,
+                    NOT ( ISBLANK ( 'Requests'[ClosedAt] ) )
+                        && 'Requests'[ClosedAt] <= [Date]
+                )
+            ),
+        "ActiveOpen",
+            CALCULATE (
+                COUNTROWS ( CriticalCRs ),
+                FILTER (
+                    CriticalCRs,
+                    'Requests'[OpenedAt] <= [Date]
+                        && (
+                            ISBLANK ( 'Requests'[ClosedAt] )
+                            || 'Requests'[ClosedAt] > [Date]
+                        )
+                )
+            )
+    )
+```
+
+---
+
+## 🧾 Output Columns
+
+| Column             | Description                                                                |
+| ------------------ | -------------------------------------------------------------------------- |
+| `Date`             | Calendar date                                                              |
+| `CumulativeOpened` | Total number of critical change requests opened up to and including `Date` |
+| `CumulativeClosed` | Total number of critical change requests closed up to `Date`               |
+| `ActiveOpen`       | Requests opened but not yet closed on `Date` (i.e., active backlog)        |
+
+---
+
+## 📊 Chart Suggestions
+
+* **Line Chart** (X-axis = `Date`)
+
+  * Line 1: `CumulativeOpened`
+  * Line 2: `CumulativeClosed`
+  * Line 3 (optional): `ActiveOpen`
+* Used to track progress, bottlenecks, or aging backlog
+
+---
+
+Would you like a version that segments this by **Assignment Group** or shows **average time to close** over time as well?
+
+
 Here’s a **DAX query that creates a summary table** for **Critical Change Requests** showing:
 
 * **Opened count per day**
