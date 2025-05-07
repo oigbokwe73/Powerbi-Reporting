@@ -13,6 +13,18 @@ This is ideal for use in a Power BI line and column combo chart for burndown and
 Would you like the underlying sample dataset exported as CSV?
 
 
+
+Here's a sample time series chart showing:
+
+* 📈 **Open Running Total** (cumulative active Critical CRs)
+* 🔹 **Daily Opened and Closed** counts (dashed lines)
+* 🟩 **Closed Within SLA (≤7 days)** as semi-transparent bars
+
+This is ideal for use in a Power BI line and column combo chart for burndown and SLA tracking.
+
+Would you like the underlying sample dataset exported as CSV?
+
+
 * **Daily** status of **Critical Change Requests**
 * Counts of **opened** and **closed** per day
 * A **running total of open requests** (burndown style)
