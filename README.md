@@ -3,6 +3,95 @@
 
 Here’s a **Cumulative DAX Query Table** to calculate a **running total of Critical Change Requests** over time — both **opened** and **closed** — using the `OpenedAt` and `ClosedAt` dates. This is perfect for creating **burnup or burndown charts** in Power BI.
 
+Here’s a **DAX table query** to create a **cumulative daily view** of **Critical Change Requests** that were **opened vs closed**, ideal for a **line chart in Power BI** to show trends over time (e.g., volume buildup and resolution).
+
+---
+
+## ✅ DAX Table: `CriticalChangeRequestTrend`
+
+```dax
+CriticalChangeRequestTrend =
+VAR BaseData =
+    FILTER (
+        'Requests',
+        LOWER ( 'Requests'[Priority] ) = "critical"
+            && LOWER ( 'Requests'[Type] ) = "change request"
+    )
+
+VAR Dates =
+    CALENDAR (
+        MINX ( BaseData, 'Requests'[OpenedAt] ),
+        TODAY()
+    )
+
+VAR TrendTable =
+    ADDCOLUMNS (
+        Dates,
+        "OpenedCRs",
+            CALCULATE (
+                COUNTROWS ( BaseData ),
+                FILTER (
+                    BaseData,
+                    INT ( 'Requests'[OpenedAt] ) = [Date]
+                )
+            ),
+        "ClosedCRs",
+            CALCULATE (
+                COUNTROWS ( BaseData ),
+                FILTER (
+                    BaseData,
+                    NOT ISBLANK ( 'Requests'[ClosedAt] )
+                        && INT ( 'Requests'[ClosedAt] ) = [Date]
+                )
+            )
+    )
+
+VAR WithCumulative =
+    ADDCOLUMNS (
+        TrendTable,
+        "CumulativeOpened",
+            CALCULATE (
+                SUMX ( TrendTable, [OpenedCRs] ),
+                FILTER ( TrendTable, [Date] <= EARLIER ( [Date] ) )
+            ),
+        "CumulativeClosed",
+            CALCULATE (
+                SUMX ( TrendTable, [ClosedCRs] ),
+                FILTER ( TrendTable, [Date] <= EARLIER ( [Date] ) )
+            )
+    )
+
+RETURN
+    WithCumulative
+```
+
+---
+
+## 📊 Resulting Table Columns
+
+| Column             | Description                                          |
+| ------------------ | ---------------------------------------------------- |
+| `Date`             | Daily date                                           |
+| `OpenedCRs`        | Count of critical change requests opened on that day |
+| `ClosedCRs`        | Count of critical change requests closed on that day |
+| `CumulativeOpened` | Running total of opened CRs up to that date          |
+| `CumulativeClosed` | Running total of closed CRs up to that date          |
+
+---
+
+## 📈 How to Visualize in Power BI
+
+1. Create a **Line Chart**:
+
+   * **X-axis**: `Date`
+   * **Y-axis**: `CumulativeOpened`, `CumulativeClosed`
+2. Format with different line styles/colors
+3. Add tooltips to show `OpenedCRs`, `ClosedCRs` on hover (optional)
+
+---
+
+Would you like to **extend this to include backlog (difference)** or calculate **SLA breach trends** as well?
+
 ---
 
 ## ✅ DAX Calculated Table: `CumulativeCriticalChangeRequests`
