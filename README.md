@@ -1,4 +1,104 @@
 # Powerbi-Reporting
+Perfect — here’s a complete **DAX query** to create a **time series table** that tracks:
+
+* **Daily** status of **Critical Change Requests**
+* Counts of **opened** and **closed** per day
+* A **running total of open requests** (burndown style)
+* Tracking over a **continuous time series**, even on days with zero activity
+
+---
+
+### ✅ Final DAX Table: `CriticalCR_TimeSeriesTracking`
+
+```dax
+CriticalCR_TimeSeriesTracking =
+VAR CriticalCRs =
+    FILTER (
+        'Requests',
+        LOWER('Requests'[Priority]) = "critical"
+            && LOWER('Requests'[Type]) = "change request"
+            && NOT(ISBLANK('Requests'[OpenedAt]))
+    )
+
+-- Create a continuous date series from earliest opened to latest closed or today
+VAR DateRange =
+    CALENDAR (
+        MINX(CriticalCRs, 'Requests'[OpenedAt]),
+        MAXX(CriticalCRs, COALESCE('Requests'[ClosedAt], TODAY()))
+    )
+
+-- Add columns: Opened, Closed, OpenRunningTotal, ClosedWithinSLA
+RETURN
+ADDCOLUMNS (
+    DateRange,
+    "OpenedCount",
+        CALCULATE (
+            COUNTROWS ( CriticalCRs ),
+            FILTER (
+                CriticalCRs,
+                'Requests'[OpenedAt] = [Date]
+            )
+        ),
+    "ClosedCount",
+        CALCULATE (
+            COUNTROWS ( CriticalCRs ),
+            FILTER (
+                CriticalCRs,
+                NOT(ISBLANK('Requests'[ClosedAt]))
+                && 'Requests'[ClosedAt] = [Date]
+            )
+        ),
+    "OpenRunningTotal",
+        CALCULATE (
+            COUNTROWS ( CriticalCRs ),
+            FILTER (
+                CriticalCRs,
+                'Requests'[OpenedAt] <= [Date]
+                && (
+                    ISBLANK('Requests'[ClosedAt])
+                    || 'Requests'[ClosedAt] > [Date]
+                )
+            )
+        ),
+    "ClosedWithinSLA",
+        CALCULATE (
+            COUNTROWS ( CriticalCRs ),
+            FILTER (
+                CriticalCRs,
+                NOT(ISBLANK('Requests'[ClosedAt]))
+                && 'Requests'[ClosedAt] = [Date]
+                && DATEDIFF('Requests'[OpenedAt], 'Requests'[ClosedAt], DAY) <= 7
+            )
+        )
+)
+```
+
+---
+
+### 📊 Output Columns (Time Series)
+
+| Column             | Description                                                               |
+| ------------------ | ------------------------------------------------------------------------- |
+| `Date`             | Each day in the time range                                                |
+| `OpenedCount`      | How many Critical CRs were opened on that date                            |
+| `ClosedCount`      | How many Critical CRs were closed on that date                            |
+| `OpenRunningTotal` | Cumulative count of CRs still open as of that date                        |
+| `ClosedWithinSLA`  | How many CRs were closed that day within SLA (≤7 days from open to close) |
+
+---
+
+### 📈 Recommended Line Chart Setup
+
+* **X-Axis**: `Date`
+* **Y-Axis (Lines)**:
+
+  * `OpenRunningTotal` – Active open CRs (shows burndown)
+  * `OpenedCount` and `ClosedCount` – Trends of activity
+  * Optional: `ClosedWithinSLA` as shaded area or separate column series
+
+---
+
+Would you like this version enhanced to include **filters by Assignment Group, Region, or Time Slicer Sync** for drill-through dashboards?
 
 Great! Below is an **enhanced cumulative DAX query** that:
 
