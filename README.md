@@ -1,7 +1,60 @@
 # Powerbi-Reporting
 Perfect — here’s a complete **DAX query** to create a **time series table** that tracks:
 
+```python
 
+import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
+from datetime import timedelta
+
+# Sample data generation
+np.random.seed(42)
+start_date = pd.to_datetime("2024-01-01")
+end_date = pd.to_datetime("2024-01-30")
+date_range = pd.date_range(start=start_date, end=end_date, freq='D')
+
+# Simulate open and close activity
+opened_count = np.random.poisson(3, len(date_range))
+closed_count = np.random.poisson(2, len(date_range))
+
+# Simulate running total
+open_running_total = np.cumsum(opened_count - closed_count)
+open_running_total = np.clip(open_running_total, 0, None)
+
+# Simulate ClosedWithinSLA as a portion of closed_count
+closed_within_sla = np.minimum(closed_count, np.random.poisson(1, len(date_range)))
+
+# Build DataFrame
+df = pd.DataFrame({
+    'Date': date_range,
+    'OpenedCount': opened_count,
+    'ClosedCount': closed_count,
+    'OpenRunningTotal': open_running_total,
+    'ClosedWithinSLA': closed_within_sla
+})
+
+# Plotting
+plt.figure(figsize=(14, 6))
+
+# Lines for running total and daily open/close
+plt.plot(df['Date'], df['OpenRunningTotal'], label='Open Running Total', linewidth=2)
+plt.plot(df['Date'], df['OpenedCount'], label='Opened Count (Daily)', linestyle='--')
+plt.plot(df['Date'], df['ClosedCount'], label='Closed Count (Daily)', linestyle='--')
+
+# Bars for SLA
+plt.bar(df['Date'], df['ClosedWithinSLA'], label='Closed Within SLA (≤7d)', color='lightgreen', alpha=0.5)
+
+plt.title("Critical Change Requests - Time Series (Opened vs Closed vs SLA)", fontsize=14)
+plt.xlabel("Date")
+plt.ylabel("Count")
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.xticks(rotation=45)
+plt.show()
+
+```
 Here's a sample time series chart showing:
 
 * 📈 **Open Running Total** (cumulative active Critical CRs)
