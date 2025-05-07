@@ -1,5 +1,191 @@
 # Powerbi-Reporting
 
+Great! Below is an **enhanced cumulative DAX query** that:
+
+* Tracks **Critical Change Requests** over time
+* Shows **cumulative opened vs. closed**
+* Groups the results by **month and year** for trend analysis
+* Optionally highlights **SLA threshold** (e.g., close within 7 days)
+
+---
+
+### ✅ DAX Table: `CriticalCR_CumulativeMonthlyTrend`
+
+```dax
+CriticalCR_CumulativeMonthlyTrend =
+VAR CriticalCRs =
+    FILTER (
+        'Requests',
+        LOWER('Requests'[Priority]) = "critical"
+            && LOWER('Requests'[Type]) = "change request"
+            && NOT(ISBLANK('Requests'[OpenedAt]))
+    )
+
+VAR DateRange =
+    CALENDAR(
+        MINX(CriticalCRs, 'Requests'[OpenedAt]),
+        MAXX(CriticalCRs, COALESCE('Requests'[ClosedAt], TODAY()))
+    )
+
+VAR WithPeriod =
+    ADDCOLUMNS(
+        DateRange,
+        "Year", YEAR([Date]),
+        "Month", FORMAT([Date], "MMM"),
+        "YearMonth", FORMAT([Date], "YYYY-MM")
+    )
+
+RETURN
+SUMMARIZECOLUMNS(
+    'WithPeriod'[YearMonth],
+    'WithPeriod'[Year],
+    'WithPeriod'[Month],
+    "CumulativeOpened",
+        CALCULATE(
+            COUNTROWS(CriticalCRs),
+            FILTER(
+                CriticalCRs,
+                'Requests'[OpenedAt] <= MAX('WithPeriod'[Date])
+            )
+        ),
+    "CumulativeClosed",
+        CALCULATE(
+            COUNTROWS(CriticalCRs),
+            FILTER(
+                CriticalCRs,
+                NOT(ISBLANK('Requests'[ClosedAt])) &&
+                'Requests'[ClosedAt] <= MAX('WithPeriod'[Date])
+            )
+        ),
+    "ClosedWithinSLA",
+        CALCULATE(
+            COUNTROWS(CriticalCRs),
+            FILTER(
+                CriticalCRs,
+                NOT(ISBLANK('Requests'[ClosedAt])) &&
+                DATEDIFF('Requests'[OpenedAt], 'Requests'[ClosedAt], DAY) <= 7 &&
+                'Requests'[ClosedAt] <= MAX('WithPeriod'[Date])
+            )
+        )
+)
+```
+
+---
+
+### 📈 Chart Recommendations
+
+| Metric             | Use In Chart Type         | Description                             |
+| ------------------ | ------------------------- | --------------------------------------- |
+| `CumulativeOpened` | Line                      | Total opened Critical CRs over time     |
+| `CumulativeClosed` | Line                      | Total closed Critical CRs over time     |
+| `ClosedWithinSLA`  | Column or area under line | SLA performance trend (<= 7 days close) |
+
+#### Line Chart Configuration
+
+* **X-axis**: `YearMonth` (sort by Year + Month index)
+* **Y-axis**: CumulativeOpened, CumulativeClosed (lines), ClosedWithinSLA (optional fill area or bars)
+
+---
+
+### 🧠 Bonus Tips
+
+* To sort `Month` properly in visuals, create a `MonthNumber` column:
+
+  ```dax
+  MonthNumber = MONTH([Date])
+  ```
+* To support slicers or filters, consider using a separate **Date Dimension** table.
+
+---
+
+Would you like this wrapped into a reusable **Power BI Dataflow or a .pbix demo file**?
+
+
+Here’s a **cumulative DAX query** that produces a table suitable for a **line chart in Power BI**, comparing the **cumulative count of Critical Change Requests opened vs closed** over time.
+
+This will enable a **line chart with two series**:
+
+* **Cumulative Opened**
+* **Cumulative Closed**
+
+---
+
+### ✅ DAX Table: `CriticalCR_CumulativeOpenClosed`
+
+```dax
+CriticalCR_CumulativeOpenClosed =
+VAR CriticalCRs =
+    FILTER (
+        'Requests',
+        LOWER('Requests'[Priority]) = "critical"
+            && LOWER('Requests'[Type]) = "change request"
+            && NOT(ISBLANK('Requests'[OpenedAt]))
+    )
+
+VAR Dates =
+    CALENDAR(
+        MINX(CriticalCRs, 'Requests'[OpenedAt]),
+        MAXX(CriticalCRs, COALESCE('Requests'[ClosedAt], TODAY()))
+    )
+
+RETURN
+ADDCOLUMNS(
+    Dates,
+    "CumulativeOpened",
+        CALCULATE(
+            COUNTROWS(CriticalCRs),
+            FILTER(
+                CriticalCRs,
+                'Requests'[OpenedAt] <= [Date]
+            )
+        ),
+    "CumulativeClosed",
+        CALCULATE(
+            COUNTROWS(CriticalCRs),
+            FILTER(
+                CriticalCRs,
+                NOT(ISBLANK('Requests'[ClosedAt])) &&
+                'Requests'[ClosedAt] <= [Date]
+            )
+        )
+)
+```
+
+---
+
+### 🧾 Output Table Fields
+
+| Column             | Description                                                   |
+| ------------------ | ------------------------------------------------------------- |
+| `Date`             | Continuous calendar from earliest OpenedAt to latest ClosedAt |
+| `CumulativeOpened` | Count of Critical Change Requests opened up to that date      |
+| `CumulativeClosed` | Count of Critical Change Requests closed up to that date      |
+
+---
+
+### 📊 Power BI Line Chart Configuration
+
+* **X-Axis**: `Date`
+* **Y-Axis (Values)**:
+
+  * `CumulativeOpened` → Line 1
+  * `CumulativeClosed` → Line 2
+* Add slicers if needed for filters like `Assignment Group`, `Category`, etc.
+
+---
+
+### 🔧 Notes
+
+* This assumes your main table is `'Requests'` with at least these columns:
+
+  * `OpenedAt` (Date/Time)
+  * `ClosedAt` (Date/Time, may be blank)
+  * `Priority`
+  * `Type`
+
+Would you like to include **SLA thresholds** or breakdown by **week/month/year** for trend analysis?
+
+
 
 Here’s a **Cumulative DAX Query Table** to calculate a **running total of Critical Change Requests** over time — both **opened** and **closed** — using the `OpenedAt` and `ClosedAt` dates. This is perfect for creating **burnup or burndown charts** in Power BI.
 
