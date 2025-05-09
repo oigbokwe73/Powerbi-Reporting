@@ -1,4 +1,143 @@
 # Powerbi-Reporting
+
+
+
+Here’s a full **DAX query** that gives you a **daily breakdown of open and closed incidents**, along with **age buckets** and incident counts grouped by bucket.
+
+This structure allows you to:
+
+* Plot **daily trends** of open/closed incidents
+* Compare **incident age distribution over time**
+* Use it in line charts, stacked columns, or matrix visuals
+
+---
+
+### ✅ DAX Table: `DailyIncidentAgeBuckets`
+
+```dax
+DailyIncidentAgeBuckets =
+VAR TodayDate = TODAY()
+
+-- Build a list of relevant dates
+VAR DateTable =
+    ADDCOLUMNS (
+        CALENDAR (
+            MINX ( 'Incidents', 'Incidents'[OpenedAt] ),
+            MAXX ( 'Incidents', COALESCE('Incidents'[ClosedAt], TODAY()) )
+        ),
+        "Date", [Date]
+    )
+
+-- Return final summarized table
+RETURN
+ADDCOLUMNS (
+    DateTable,
+    "OpenCount",
+        CALCULATE (
+            COUNTROWS ( 'Incidents' ),
+            FILTER (
+                'Incidents',
+                'Incidents'[OpenedAt] <= [Date]
+                    && (
+                        ISBLANK('Incidents'[ClosedAt])
+                        || 'Incidents'[ClosedAt] > [Date]
+                    )
+            )
+        ),
+    "ClosedCount",
+        CALCULATE (
+            COUNTROWS ( 'Incidents' ),
+            FILTER (
+                'Incidents',
+                NOT(ISBLANK('Incidents'[ClosedAt]))
+                    && 'Incidents'[ClosedAt] = [Date]
+            )
+        ),
+    "AgeBucket",
+        SWITCH (
+            TRUE(),
+            -- For open incidents, calculate age as of [Date]
+            CALCULATE (
+                COUNTROWS ( 'Incidents' ),
+                FILTER (
+                    'Incidents',
+                    'Incidents'[OpenedAt] <= [Date]
+                        && ISBLANK('Incidents'[ClosedAt])
+                        && DATEDIFF('Incidents'[OpenedAt], [Date], DAY) <= 7
+                )
+            ) > 0, "Open: 0–7 Days",
+
+            CALCULATE (
+                COUNTROWS ( 'Incidents' ),
+                FILTER (
+                    'Incidents',
+                    'Incidents'[OpenedAt] <= [Date]
+                        && ISBLANK('Incidents'[ClosedAt])
+                        && DATEDIFF('Incidents'[OpenedAt], [Date], DAY) <= 14
+                        && DATEDIFF('Incidents'[OpenedAt], [Date], DAY) > 7
+                )
+            ) > 0, "Open: 8–14 Days",
+
+            CALCULATE (
+                COUNTROWS ( 'Incidents' ),
+                FILTER (
+                    'Incidents',
+                    'Incidents'[OpenedAt] <= [Date]
+                        && ISBLANK('Incidents'[ClosedAt])
+                        && DATEDIFF('Incidents'[OpenedAt], [Date], DAY) <= 30
+                        && DATEDIFF('Incidents'[OpenedAt], [Date], DAY) > 14
+                )
+            ) > 0, "Open: 15–30 Days",
+
+            CALCULATE (
+                COUNTROWS ( 'Incidents' ),
+                FILTER (
+                    'Incidents',
+                    'Incidents'[OpenedAt] <= [Date]
+                        && ISBLANK('Incidents'[ClosedAt])
+                        && DATEDIFF('Incidents'[OpenedAt], [Date], DAY) > 30
+                )
+            ) > 0, "Open: >30 Days",
+
+            "Closed or N/A"
+        )
+)
+```
+
+---
+
+### 🧾 Output Fields
+
+| Column        | Description                                         |
+| ------------- | --------------------------------------------------- |
+| `Date`        | Calendar date in the range of incidents             |
+| `OpenCount`   | How many incidents were open as of that date        |
+| `ClosedCount` | How many incidents were closed on that date         |
+| `AgeBucket`   | Classification of open incidents by age on that day |
+
+---
+
+### 📊 Chart Suggestions
+
+1. **Line Chart**:
+
+   * X: `Date`
+   * Y: `OpenCount` and `ClosedCount` (2 lines)
+2. **Stacked Area Chart**:
+
+   * X: `Date`
+   * Y: `OpenCount`
+   * Legend: `AgeBucket`
+3. **Matrix**:
+
+   * Rows: `AgeBucket`
+   * Columns: `Date` (day/week/month)
+   * Values: `OpenCount` or `ClosedCount`
+
+---
+
+Would you like this converted into a Power BI **dataflow**, or a **sample dataset** for testing with a `.pbix` file?
+
 Perfect — here’s a complete **DAX query** to create a **time series table** that tracks:
 
 ```python
