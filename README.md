@@ -1,6 +1,84 @@
 # Powerbi-Reporting
 
 
+Here’s a **DAX query** that creates a **table comparing Incident Age Buckets** with the **number of open and closed incidents** — perfect for visualizing in **matrix** or **stacked column charts** in Power BI.
+
+---
+
+### ✅ DAX Table: `Incident_AgeBuckets_Summary`
+
+```dax
+Incident_AgeBuckets_Summary =
+VAR TodayDate = TODAY()
+
+-- Build age buckets
+RETURN
+SUMMARIZECOLUMNS (
+    SWITCH (
+        TRUE(),
+        ISBLANK('Incidents'[ClosedAt]) &&
+        DATEDIFF('Incidents'[OpenedAt], TodayDate, DAY) <= 7, "AgeBucket", "0-7 Days",
+        
+        ISBLANK('Incidents'[ClosedAt]) &&
+        DATEDIFF('Incidents'[OpenedAt], TodayDate, DAY) <= 14, "AgeBucket", "8-14 Days",
+        
+        ISBLANK('Incidents'[ClosedAt]) &&
+        DATEDIFF('Incidents'[OpenedAt], TodayDate, DAY) <= 30, "AgeBucket", "15-30 Days",
+        
+        ISBLANK('Incidents'[ClosedAt]) &&
+        DATEDIFF('Incidents'[OpenedAt], TodayDate, DAY) > 30, "AgeBucket", "30+ Days",
+
+        NOT(ISBLANK('Incidents'[ClosedAt])) &&
+        DATEDIFF('Incidents'[OpenedAt], 'Incidents'[ClosedAt], DAY) <= 7, "AgeBucket", "Closed in 0-7 Days",
+
+        NOT(ISBLANK('Incidents'[ClosedAt])) &&
+        DATEDIFF('Incidents'[OpenedAt], 'Incidents'[ClosedAt], DAY) <= 14, "AgeBucket", "Closed in 8-14 Days",
+
+        NOT(ISBLANK('Incidents'[ClosedAt])) &&
+        DATEDIFF('Incidents'[OpenedAt], 'Incidents'[ClosedAt], DAY) <= 30, "AgeBucket", "Closed in 15-30 Days",
+
+        "Closed in 30+ Days"  -- default
+    ),
+    "OpenIncidents",
+        CALCULATE (
+            COUNTROWS ( 'Incidents' ),
+            'Incidents'[ClosedAt] = BLANK()
+        ),
+    "ClosedIncidents",
+        CALCULATE (
+            COUNTROWS ( 'Incidents' ),
+            NOT(ISBLANK('Incidents'[ClosedAt]))
+        )
+)
+```
+
+---
+
+### 🧾 What This Table Contains
+
+| Column            | Description                                               |
+| ----------------- | --------------------------------------------------------- |
+| `AgeBucket`       | Bucketed by time to close (if closed) or age (if open)    |
+| `OpenIncidents`   | Count of currently open incidents in that age bucket      |
+| `ClosedIncidents` | Count of closed incidents falling in that duration bucket |
+
+---
+
+### 📊 Chart Suggestions
+
+* **Matrix** with `AgeBucket` rows, `OpenIncidents` and `ClosedIncidents` as values
+* **Stacked Column Chart**:
+
+  * Axis: `AgeBucket`
+  * Values: `OpenIncidents`, `ClosedIncidents`
+
+---
+
+### 💡 Pro Tip
+
+To control bucket ordering, create a **separate Age Bucket table** with an index column and use it as a dimension with a sort-by column.
+
+Would you like the companion **Age Bucket dimension table** and DAX to relate it properly?
 
 Here’s a full **DAX query** that gives you a **daily breakdown of open and closed incidents**, along with **age buckets** and incident counts grouped by bucket.
 
