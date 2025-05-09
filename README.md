@@ -1,5 +1,90 @@
 # Powerbi-Reporting
 
+Sure! Below are **two different DAX queries** for generating an `Incident_AgeBuckets_Summary` table in Power BI. Both categorize incidents into **age buckets**, but use different methods:
+
+---
+
+## ✅ Query 1: **Using DATEDIFF Bucketing with Status Split (Open vs Closed)**
+
+This query uses `DATEDIFF` to classify incidents into age buckets and splits them into **open vs closed** counts.
+
+```dax
+Incident_AgeBuckets_Summary_1 =
+VAR TodayDate = TODAY()
+RETURN
+SUMMARIZE (
+    'Incidents',
+    -- Age Bucket based on days between OpenedAt and either ClosedAt or Today
+    SWITCH (
+        TRUE(),
+        ISBLANK('Incidents'[ClosedAt]) &&
+        DATEDIFF('Incidents'[OpenedAt], TodayDate, DAY) <= 7, "Open: 0-7 Days",
+        ISBLANK('Incidents'[ClosedAt]) &&
+        DATEDIFF('Incidents'[OpenedAt], TodayDate, DAY) <= 14, "Open: 8-14 Days",
+        ISBLANK('Incidents'[ClosedAt]) &&
+        DATEDIFF('Incidents'[OpenedAt], TodayDate, DAY) <= 30, "Open: 15-30 Days",
+        ISBLANK('Incidents'[ClosedAt]) &&
+        DATEDIFF('Incidents'[OpenedAt], TodayDate, DAY) > 30, "Open: >30 Days",
+        NOT(ISBLANK('Incidents'[ClosedAt])) &&
+        DATEDIFF('Incidents'[OpenedAt], 'Incidents'[ClosedAt], DAY) <= 7, "Closed: 0-7 Days",
+        NOT(ISBLANK('Incidents'[ClosedAt])) &&
+        DATEDIFF('Incidents'[OpenedAt], 'Incidents'[ClosedAt], DAY) <= 14, "Closed: 8-14 Days",
+        NOT(ISBLANK('Incidents'[ClosedAt])) &&
+        DATEDIFF('Incidents'[OpenedAt], 'Incidents'[ClosedAt], DAY) <= 30, "Closed: 15-30 Days",
+        "Closed: >30 Days"
+    ) AS AgeBucket,
+    "IncidentCount", COUNTROWS('Incidents')
+)
+```
+
+---
+
+## ✅ Query 2: **Using Bucket Range from a Custom Column + Status Filter**
+
+This query assumes you've already created a calculated column called `AgeInDays` and `Status` (Open/Closed), and groups by **explicit numeric ranges**.
+
+### Example supporting calculated column:
+
+```dax
+AgeInDays = 
+DATEDIFF(
+    'Incidents'[OpenedAt],
+    COALESCE('Incidents'[ClosedAt], TODAY()),
+    DAY
+)
+```
+
+### Query:
+
+```dax
+Incident_AgeBuckets_Summary_2 =
+SUMMARIZE (
+    'Incidents',
+    SWITCH (
+        TRUE(),
+        'Incidents'[AgeInDays] <= 7, "0-7 Days",
+        'Incidents'[AgeInDays] <= 14, "8-14 Days",
+        'Incidents'[AgeInDays] <= 30, "15-30 Days",
+        "30+ Days"
+    ) AS AgeBucket,
+    'Incidents'[Status],
+    "IncidentCount", COUNTROWS('Incidents')
+)
+```
+
+---
+
+### 📊 Use Cases
+
+| Query Type | Use Case                                                               |
+| ---------- | ---------------------------------------------------------------------- |
+| Query 1    | When no Age column exists and you want to bucket dynamically by status |
+| Query 2    | When you want flexibility or have a model with precomputed age/status  |
+
+---
+
+Would you like a version that includes **SLA compliance** or groups incidents by **assignment group or category** as a second axis?
+
 
 Here’s a **DAX query** that creates a **table comparing Incident Age Buckets** with the **number of open and closed incidents** — perfect for visualizing in **matrix** or **stacked column charts** in Power BI.
 
