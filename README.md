@@ -1,5 +1,102 @@
 # Powerbi-Reporting
 
+Here’s a **DAX query** that creates a **burn down table** for displaying **open vs closed incidents over time** in a **stacked column chart** in Power BI.
+
+This is ideal for visualizing how your **open backlog decreases** (or grows) day-by-day as incidents are **opened and closed**.
+
+---
+
+### ✅ DAX Table: `Incident_Burndown_ByDate`
+
+```dax
+Incident_Burndown_ByDate =
+VAR MinDate = CALCULATE(MIN('Incidents'[OpenedAt]), NOT(ISBLANK('Incidents'[OpenedAt])))
+VAR MaxDate = CALCULATE(
+    MAXX('Incidents', COALESCE('Incidents'[ClosedAt], TODAY()))
+)
+
+-- Step 1: Create continuous date range
+VAR DateRange =
+    ADDCOLUMNS (
+        CALENDAR ( MinDate, MaxDate ),
+        "Date", [Date]
+    )
+
+-- Step 2: Add counts of opened, closed, and open on each day
+RETURN
+ADDCOLUMNS (
+    DateRange,
+    "OpenedCount",
+        CALCULATE (
+            COUNTROWS ( 'Incidents' ),
+            FILTER (
+                'Incidents',
+                NOT(ISBLANK('Incidents'[OpenedAt])) &&
+                'Incidents'[OpenedAt] = [Date]
+            )
+        ),
+    "ClosedCount",
+        CALCULATE (
+            COUNTROWS ( 'Incidents' ),
+            FILTER (
+                'Incidents',
+                NOT(ISBLANK('Incidents'[ClosedAt])) &&
+                'Incidents'[ClosedAt] = [Date]
+            )
+        ),
+    "OpenRunningTotal",
+        CALCULATE (
+            COUNTROWS ( 'Incidents' ),
+            FILTER (
+                'Incidents',
+                NOT(ISBLANK('Incidents'[OpenedAt])) &&
+                'Incidents'[OpenedAt] <= [Date] &&
+                (
+                    ISBLANK('Incidents'[ClosedAt]) ||
+                    'Incidents'[ClosedAt] > [Date]
+                )
+            )
+        )
+)
+```
+
+---
+
+### 🧾 Output Columns
+
+| Column             | Description                                         |
+| ------------------ | --------------------------------------------------- |
+| `Date`             | Day in timeline                                     |
+| `OpenedCount`      | Number of incidents opened on that day              |
+| `ClosedCount`      | Number of incidents closed on that day              |
+| `OpenRunningTotal` | Total number of incidents still open as of that day |
+
+---
+
+### 📊 Power BI Chart Configuration
+
+#### 🟦 **Stacked Column Chart** (Burn Down View)
+
+| Axis   | `Date`                                            |
+| ------ | ------------------------------------------------- |
+| Values | `OpenedCount`, `ClosedCount`                      |
+| Legend | Use `Field value` or `hardcoded color categories` |
+
+#### 📈 **Optional Line Overlay**
+
+* Add a **Line and Stacked Column Chart**
+* Line value: `OpenRunningTotal`
+
+This way you show:
+
+* 📊 Daily open and closed activity (columns)
+* 📉 Cumulative open backlog over time (line)
+
+---
+
+Would you like this wrapped into a **measure-based version** or a **sample PBIX with slicers for Assignment Group or Priority**?
+
+
 Sure! Below are **two different DAX queries** for generating an `Incident_AgeBuckets_Summary` table in Power BI. Both categorize incidents into **age buckets**, but use different methods:
 
 ---
