@@ -1,6 +1,56 @@
 # Powerbi-Reporting
 
 
+Here’s a **design diagram** showing how **IIS logs from an Azure VM** are collected using **Azure Monitor Agent (AMA)** and **Data Collection Rules (DCRs)**, then ingested into **Log Analytics Workspace** for querying.
+
+---
+
+### **Mermaid Diagram – IIS Log Collection via Azure Monitor DCR**
+
+```mermaid
+flowchart TD
+    subgraph VM["Azure Virtual Machine (Windows)"]
+        IIS["IIS Web Server"]
+        Logs["IIS Log Files<br/>C:\\inetpub\\logs\\LogFiles"]
+        AMA["Azure Monitor Agent"]
+    end
+
+    subgraph AzureMonitor["Azure Monitor"]
+        DCR["Data Collection Rule"]
+        LAW["Log Analytics Workspace"]
+    end
+
+    IIS --> Logs
+    Logs --> AMA
+    AMA --> DCR
+    DCR --> LAW
+    LAW --> Query["Log Analytics (Kusto Query)"]
+
+    classDef azure fill:#E5F3FF,stroke:#0078D4,stroke-width:2px;
+    classDef vm fill:#F0FFF0,stroke:#28A745,stroke-width:2px;
+    class VM,IIS,Logs,AMA vm
+    class AzureMonitor,DCR,LAW,Query azure
+```
+
+---
+
+### 📘 **Component Descriptions**
+
+| Component                         | Description                                                          |
+| --------------------------------- | -------------------------------------------------------------------- |
+| **IIS**                           | Web server hosting applications, generating logs (e.g., `u_ex*.log`) |
+| **IIS Log Files**                 | Default log location: `C:\inetpub\logs\LogFiles\W3SVC1`              |
+| **Azure Monitor Agent (AMA)**     | Installed on the VM, reads IIS logs as per DCR path                  |
+| **Data Collection Rule (DCR)**    | Defines log source path and destination (e.g., Log Analytics)        |
+| **Log Analytics Workspace (LAW)** | Centralized Azure Monitor data store where logs are sent             |
+| **Log Analytics (Kusto Query)**   | Use KQL to query and visualize collected log data                    |
+
+---
+
+Would you like a **Bicep, Terraform, or YAML** example to implement this setup end-to-end?
+
+
+
 To collect **IIS logs** from an **Azure Virtual Machine (VM)** using **Azure Monitor** with a **Data Collection Rule (DCR)**, follow these structured steps:
 
 ---
