@@ -1,5 +1,148 @@
 # Powerbi-Reporting
 
+
+To collect **IIS logs** from an **Azure Virtual Machine (VM)** using **Azure Monitor** with a **Data Collection Rule (DCR)**, follow these structured steps:
+
+---
+
+### ✅ Prerequisites
+
+1. **Azure VM** (Windows) with IIS installed and logging enabled.
+2. **Azure Monitor Agent (AMA)** installed on the VM.
+3. **Log Analytics Workspace** to send the logs.
+4. **Permissions**: You must have at least **Monitoring Contributor** or **Contributor** role on the VM and Log Analytics Workspace.
+
+---
+
+### 🔁 High-Level Workflow
+
+1. Enable IIS logging on the VM.
+2. Install Azure Monitor Agent (AMA).
+3. Create a Data Collection Rule (DCR).
+4. Configure the IIS log collection path.
+5. Associate the DCR to the VM.
+6. Validate data in Log Analytics.
+
+---
+
+### 🛠 Step-by-Step Instructions
+
+---
+
+#### 🔹 Step 1: Enable IIS Logging on VM
+
+1. Connect to your VM using RDP.
+2. Open **IIS Manager** → Select your site (e.g., Default Web Site).
+3. In the **Features View**, double-click **Logging**.
+4. Make sure logging is enabled and the **log file directory path** is noted (default: `C:\inetpub\logs\LogFiles`).
+
+---
+
+#### 🔹 Step 2: Install Azure Monitor Agent
+
+1. In Azure Portal, go to **Virtual Machines**.
+2. Select the VM → In the left menu, go to **Extensions + applications**.
+3. Click **+ Add** → Choose **Azure Monitor Agent** → Install.
+
+Alternatively, use PowerShell:
+
+```powershell
+az vm extension set --resource-group <ResourceGroup> --vm-name <VMName> `
+--name AzureMonitorWindowsAgent --publisher Microsoft.Azure.Monitor
+```
+
+---
+
+#### 🔹 Step 3: Create a Log Analytics Workspace (if not already done)
+
+```bash
+az monitor log-analytics workspace create \
+  --resource-group <ResourceGroup> \
+  --workspace-name <WorkspaceName> \
+  --location <Region>
+```
+
+---
+
+#### 🔹 Step 4: Create a Data Collection Rule (DCR)
+
+You can do this from the **Azure Portal** or use CLI. Here is a portal-based flow:
+
+1. Go to **Azure Monitor** → **Data Collection Rules** → **+ Create**.
+
+2. **Basics**:
+
+   * Subscription & Resource Group
+   * DCR Name (e.g., `iis-log-dcr`)
+   * Region (same as VM)
+
+3. **Resources to collect from**:
+
+   * Click **+ Add resource**
+   * Select your **Windows VM**
+
+4. **Data Sources**:
+
+   * Choose **Custom Logs**
+   * File path:
+
+     ```
+     C:\inetpub\logs\LogFiles\W3SVC1\u_ex*.log
+     ```
+   * Record delimiter: **New line**
+
+5. **Destination**:
+
+   * Send to **Log Analytics Workspace**
+   * Select your workspace
+
+6. Review and create
+
+---
+
+#### 🔹 Step 5: Associate DCR with VM
+
+This is already done in step 4 during creation if you selected the VM.
+
+If needed later:
+
+```bash
+az monitor data-collection rule association create \
+  --name <association-name> \
+  --rule-name <dcr-name> \
+  --resource <vm-resource-id> \
+  --resource-type "Microsoft.Compute/virtualMachines" \
+  --resource-group <ResourceGroup>
+```
+
+---
+
+#### 🔹 Step 6: Validate Logs in Log Analytics
+
+1. Go to **Log Analytics Workspace** → **Logs**.
+2. Use the following KQL query:
+
+```kusto
+CustomLog_CL
+| where _ResourceId contains "<VMName>" 
+| sort by TimeGenerated desc
+```
+
+Replace `CustomLog_CL` with the actual table name if you specified a custom name during DCR setup.
+
+---
+
+### 🧠 Notes
+
+* Azure Monitor Agent uses **Data Collection Rules (DCRs)** to define exactly **what data to collect and where to send it**.
+* IIS logs are treated as **custom logs** collected via a **path-based pattern**.
+* Each IIS site might log to a different folder (e.g., `W3SVC2`, `W3SVC3`) — include all needed paths.
+
+---
+
+Would you like a **Terraform or ARM template** to automate this setup?
+
+
 Here’s a **DAX query** that creates a **burn down table** for displaying **open vs closed incidents over time** in a **stacked column chart** in Power BI.
 
 This is ideal for visualizing how your **open backlog decreases** (or grows) day-by-day as incidents are **opened and closed**.
