@@ -1,5 +1,66 @@
 # Powerbi-Reporting
 
+Here's a **detailed Mermaid sequence diagram** illustrating how **Power BI connects to an Azure Log Analytics Workspace using a Service Principal for authentication**:
+
+---
+
+### ✅ **Key Components in the Sequence**:
+
+* **User**: Analyst or report creator.
+* **Power BI Desktop/Service**: Tool used for data modeling and visualization.
+* **Azure AD (Entra ID)**: Authenticates the service principal.
+* **Service Principal (App Registration)**: Provides app-level access to Log Analytics.
+* **Log Analytics Workspace (LAW)**: Target data source.
+* **Kusto REST API / Azure Monitor API**: Interface used to query data from LAW.
+
+---
+
+### ✅ **Mermaid Sequence Diagram**
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant PowerBI as Power BI Desktop/Service
+    participant EntraID as Azure AD (Entra ID)
+    participant SP as Service Principal (App Registration)
+    participant LAW as Log Analytics Workspace
+    participant API as Azure Monitor/Kusto API
+
+    User->>PowerBI: Opens Power BI Desktop / Service
+    User->>PowerBI: Configures Log Analytics connection (KQL + API URL)
+    PowerBI->>SP: Uses App ID and Secret to obtain token
+    SP->>EntraID: Requests OAuth2 token (client_credentials flow)
+    EntraID-->>SP: Returns access_token (valid for Log Analytics API)
+    PowerBI->>API: Sends Kusto query with access_token
+    API->>LAW: Retrieves data from Log Analytics Workspace
+    LAW-->>API: Returns queried data
+    API-->>PowerBI: Delivers results
+    PowerBI-->>User: Visualizes data in reports/dashboard
+```
+
+---
+
+### 🔐 **Authentication Flow (Service Principal)**
+
+* **Flow**: OAuth2.0 - Client Credentials
+* **Token Endpoint**:
+  `https://login.microsoftonline.com/{tenant-id}/oauth2/v2.0/token`
+* **Required Permissions**:
+  `Azure Monitor > Data.Read` or `Log Analytics Reader` on the LAW.
+
+---
+
+### ⚙️ **Power BI Connection Settings**
+
+When connecting from Power BI:
+
+* Use the **Azure Monitor** or **Kusto** connector.
+* Choose **"Organizational Account"** and inject the **token manually** in advanced scenarios via custom connectors or gateway.
+
+---
+
+Would you like me to generate this sequence diagram as a PNG or include setup steps in Power BI and Azure for this connection?
+
 
 Here’s a **design diagram** showing how **IIS logs from an Azure VM** are collected using **Azure Monitor Agent (AMA)** and **Data Collection Rules (DCRs)**, then ingested into **Log Analytics Workspace** for querying.
 
