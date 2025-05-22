@@ -65,6 +65,78 @@ Would you like me to generate this sequence diagram as a PNG or include setup st
 Here’s a **design diagram** showing how **IIS logs from an Azure VM** are collected using **Azure Monitor Agent (AMA)** and **Data Collection Rules (DCRs)**, then ingested into **Log Analytics Workspace** for querying.
 
 ---
+Here’s the **expanded Mermaid architecture diagram** that includes **Power BI** connecting to **Log Analytics Workspace** using an **Azure Service Principal** for authentication. This is useful for enabling **automated dashboards** based on IIS logs collected from Azure VMs.
+
+---
+
+### **🖼️ Expanded Mermaid Diagram – IIS Logs to Power BI via Azure Monitor**
+
+```mermaid
+flowchart TD
+    subgraph VM["Azure Virtual Machine (Windows)"]
+        IIS["IIS Web Server"]
+        Logs["IIS Log Files<br/>C:\\inetpub\\logs\\LogFiles"]
+        AMA["Azure Monitor Agent"]
+    end
+
+    subgraph AzureMonitor["Azure Monitor"]
+        DCR["Data Collection Rule"]
+        LAW["Log Analytics Workspace"]
+        KQL["Kusto Query Engine"]
+    end
+
+    subgraph PowerBI["Power BI"]
+        PBI["Power BI Dataset / Report"]
+        SPN["Azure Service Principal<br/>(OAuth2 Auth)"]
+    end
+
+    IIS --> Logs
+    Logs --> AMA
+    AMA --> DCR
+    DCR --> LAW
+    LAW --> KQL
+    KQL --> PBI
+
+    SPN --> PBI
+    SPN --> LAW
+
+    classDef azure fill:#E5F3FF,stroke:#0078D4,stroke-width:2px;
+    classDef vm fill:#F0FFF0,stroke:#28A745,stroke-width:2px;
+    classDef powerbi fill:#FFF5E5,stroke:#F2A000,stroke-width:2px;
+
+    class VM,IIS,Logs,AMA vm
+    class AzureMonitor,DCR,LAW,KQL azure
+    class PowerBI,PBI,SPN powerbi
+```
+
+---
+
+### 🔍 Component Notes
+
+| Component                         | Description                                                |
+| --------------------------------- | ---------------------------------------------------------- |
+| **Azure Monitor Agent (AMA)**     | Collects IIS logs from the VM                              |
+| **DCR (Data Collection Rule)**    | Configured with file path to IIS logs                      |
+| **Log Analytics Workspace (LAW)** | Stores collected data                                      |
+| **Kusto Query Engine (KQL)**      | Used to query the data (e.g., custom dashboards)           |
+| **Azure Service Principal (SPN)** | Authenticates Power BI to access Log Analytics             |
+| **Power BI**                      | Pulls data from LAW using KQL queries via SPN              |
+| **Power BI Dataset/Report**       | Visualizes metrics such as request count, error rate, etc. |
+
+---
+
+### ✅ Key Integration Steps for Power BI Access
+
+1. **Register an App (SPN)** in **Azure Entra ID**.
+2. Grant the **SPN** **Reader** access to **Log Analytics Workspace**.
+3. Assign **Log Analytics Reader** role to the SPN (or custom role with `Microsoft.OperationalInsights/workspaces/query/*`).
+4. Use **Power BI Desktop** → **Get Data** → **Azure Log Analytics (Beta)**.
+5. Use the **SPN credentials** via Azure Active Directory OAuth2 to authenticate.
+6. Write and run **KQL queries** to build datasets.
+
+---
+
+Would you like a **Power BI KQL query** sample to visualize **IIS request volumes or error rates** over time?
 
 ### **Mermaid Diagram – IIS Log Collection via Azure Monitor DCR**
 
