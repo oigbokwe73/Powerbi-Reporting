@@ -1,3 +1,61 @@
+To add an alias while filtering and still return a clean summary, you can use a calculated column or better yet, create a DAX query using `ADDCOLUMNS` and `SWITCH` to map `AuditEventType` to a user-friendly alias.
+
+---
+
+### ✅ DAX Query with Aliases for `AuditEventType`
+
+```dax
+AuditEventSummaryWithAlias :=
+SUMMARIZE(
+    FILTER(
+        'AuditLogs',
+        'AuditLogs'[AuditEventType] IN {"Error", "Delivery"}
+    ),
+    'AuditLogs'[AuditEventType],
+    "EventAlias",
+        SWITCH(
+            'AuditLogs'[AuditEventType],
+            "Error", "❌ Error Event",
+            "Delivery", "📦 Delivery Event",
+            "Other"
+        ),
+    "EventCount", COUNTROWS('AuditLogs')
+)
+```
+
+---
+
+### 🧾 What This Does:
+
+* `SWITCH`: Provides a friendly alias for each event type.
+* `EventAlias`: A column alias shown in visuals like a table or chart.
+* `EventCount`: The number of rows for each `AuditEventType`.
+
+---
+
+### 🔁 Alternate version using `ADDCOLUMNS`
+
+If you're building this for use in a visual directly:
+
+```dax
+AuditEventSummaryWithAlias :=
+ADDCOLUMNS(
+    SUMMARIZE(
+        FILTER('AuditLogs', 'AuditLogs'[AuditEventType] IN {"Error", "Delivery"}),
+        'AuditLogs'[AuditEventType]
+    ),
+    "EventAlias",
+        SWITCH(
+            'AuditLogs'[AuditEventType],
+            "Error", "❌ Error Event",
+            "Delivery", "📦 Delivery Event",
+            "Other"
+        ),
+    "EventCount", COUNTROWS(FILTER('AuditLogs', 'AuditLogs'[AuditEventType] = EARLIER('AuditLogs'[AuditEventType])))
+)
+```
+
+Let me know if you'd like to visualize this in a matrix or combine with time dimensions!
 
 Here’s a DAX query you can use in **Power BI** to compare `AuditEventType` values — specifically `Error` vs `Delivery` — in a summary table or visual.
 
