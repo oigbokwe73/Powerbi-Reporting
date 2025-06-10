@@ -1,3 +1,50 @@
+
+Here’s a DAX query you can use in **Power BI** to compare `AuditEventType` values — specifically `Error` vs `Delivery` — in a summary table or visual.
+
+### ✅ DAX Query: Count of Audit Events by Type (Error vs Delivery)
+
+```dax
+AuditEventSummary :=
+SUMMARIZE(
+    FILTER(
+        'AuditLogs',
+        'AuditLogs'[AuditEventType] IN {"Error", "Delivery"}
+    ),
+    'AuditLogs'[AuditEventType],
+    "EventCount", COUNTROWS('AuditLogs')
+)
+```
+
+### 🔍 Explanation:
+
+* `FILTER`: Restricts the dataset to only include `Error` and `Delivery` event types.
+* `SUMMARIZE`: Groups the result by `AuditEventType`.
+* `COUNTROWS`: Counts how many records exist for each type.
+
+---
+
+### 📈 Optional Variant for a Visual with Date
+
+If you want to view the counts over time (e.g., by day):
+
+```dax
+AuditEventTrend :=
+SUMMARIZE(
+    FILTER(
+        'AuditLogs',
+        'AuditLogs'[AuditEventType] IN {"Error", "Delivery"}
+    ),
+    'AuditLogs'[Date],
+    'AuditLogs'[AuditEventType],
+    "EventCount", COUNTROWS('AuditLogs')
+)
+```
+
+This will allow you to build a **line or clustered column chart** comparing `Error` vs `Delivery` over time.
+
+Let me know if you’d like this wrapped in a calculated table or visual measure!
+
+
 # Powerbi-Reporting
 
 Here's a **detailed Mermaid sequence diagram** illustrating how **Power BI connects to an Azure Log Analytics Workspace using a Service Principal for authentication**:
