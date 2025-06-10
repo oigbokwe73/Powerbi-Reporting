@@ -1,3 +1,51 @@
+To calculate **daily transaction volume** in Power BI using DAX, you can use the following query. This assumes you have a date/time column such as `Timestamp` and a transaction identifier like `RequestID`.
+
+---
+
+### ✅ DAX Query: Daily Transaction Volume
+
+```dax
+DailyTransactionVolume :=
+SUMMARIZE(
+    'YourTableName',
+    CALCULATETABLE(
+        VALUES('YourTableName'[Date]), 
+        NOT(ISBLANK('YourTableName'[RequestID]))
+    ),
+    "TransactionDate", 
+        FORMAT('YourTableName'[Timestamp], "yyyy-MM-dd"),
+    "TransactionCount", 
+        COUNT('YourTableName'[RequestID])
+)
+```
+
+---
+
+### 💡 Simplified Version with `ADDCOLUMNS` (Better for some visuals)
+
+```dax
+DailyTransactionVolume :=
+ADDCOLUMNS(
+    SUMMARIZE(
+        'YourTableName',
+        FORMAT('YourTableName'[Timestamp], "yyyy-MM-dd")
+    ),
+    "TransactionCount",
+        CALCULATE(COUNT('YourTableName'[RequestID]))
+)
+```
+
+> Replace `'YourTableName'` with your actual table name (e.g., `API_Responses` or `AuditLogs`).
+
+---
+
+### 📊 Usage:
+
+* Use this measure/table to feed a **line chart** or **bar chart** for visualizing daily volume.
+* You can also extend this to group by endpoint or status by adding additional columns in `SUMMARIZE`.
+
+Let me know if you want this adapted for specific filters like `"Status" = '200 OK'` or to compare across APIs!
+
 To add an alias while filtering and still return a clean summary, you can use a calculated column or better yet, create a DAX query using `ADDCOLUMNS` and `SWITCH` to map `AuditEventType` to a user-friendly alias.
 
 ---
